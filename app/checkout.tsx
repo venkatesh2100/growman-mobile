@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from '../components/Toast';
 import { apiFetch } from '../lib/api';
 import { getAllStateNames, indianStates } from '../lib/data/indianStatesCities';
@@ -32,6 +33,7 @@ interface CustomerInfo {
 }
 
 export default function CheckoutScreen() {
+  const insets = useSafeAreaInsets();
   const { items, getSubtotal, clearCart } = useCartStore();
   const { isAuthenticated } = useAuthStore();
   const [loaded, setLoaded] = useState(false);
@@ -463,7 +465,9 @@ export default function CheckoutScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView 
+      className="flex-1 bg-gray-50"
+      contentContainerStyle={{ paddingTop: insets.top }}>
       <View className="p-4">
         <Text className="text-2xl font-bold text-gray-900 mb-6">Checkout</Text>
 

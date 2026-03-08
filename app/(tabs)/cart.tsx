@@ -2,17 +2,19 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-  Alert,
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCartStore } from '../../store/cartStore';
 
 export default function CartScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { items, removeItem, updateQuantity, getSubtotal } = useCartStore();
 
   const handleCheckout = () => {
@@ -96,7 +98,9 @@ export default function CartScreen() {
         </View>
       ) : (
         <>
-          <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
+          <ScrollView 
+            className="flex-1" 
+            contentContainerStyle={{ padding: 16, paddingTop: insets.top + 16 }}>
             {items.map((item) => (
               <View key={item.id}>
                 {renderCartItem({ item })}

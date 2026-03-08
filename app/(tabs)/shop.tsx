@@ -2,14 +2,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Modal,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ProductCard from '../../components/ProductCard';
 import { apiFetch, searchProducts } from '../../lib/api';
 import { Product } from '../../lib/types';
@@ -18,6 +19,7 @@ type SortBy = 'name' | 'price' | 'newest';
 
 export default function ShopScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,7 +106,7 @@ export default function ShopScreen() {
   );
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
       {/* Search and Filter Bar */}
       <View className="flex-row p-4 bg-white border-b border-gray-200 gap-3">
         <View className="flex-1 flex-row items-center bg-gray-100 rounded-xl px-4 h-12">

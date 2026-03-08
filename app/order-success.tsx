@@ -2,12 +2,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiFetch } from '../lib/api';
 
 interface Order {
@@ -20,6 +21,7 @@ interface Order {
 
 export default function OrderSuccessScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
+  const insets = useSafeAreaInsets();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,7 +56,9 @@ export default function OrderSuccessScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView 
+      className="flex-1 bg-gray-50"
+      contentContainerStyle={{ paddingTop: insets.top }}>
       <View className="max-w-2xl mx-auto px-4 py-12">
         <View className="bg-white rounded-xl shadow-lg p-8">
           <View className="items-center mb-6">
@@ -129,4 +133,5 @@ export default function OrderSuccessScreen() {
     </ScrollView>
   );
 }
+
 

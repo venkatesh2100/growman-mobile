@@ -1,21 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Image,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 // import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { apiFetch } from '../lib/api';
 import { toast } from './Toast';
+import MarkdownRenderer from './product/MarkdownRenderer';
 
 interface Message {
   id: string;
@@ -118,9 +119,13 @@ export default function Chatbot() {
         entering={FadeInDown.delay(index * 50).duration(300)}
         className={`mb-2 ${isUser ? 'items-end' : 'items-start'}`}>
         <View className={`max-w-[80%] p-3 rounded-2xl ${isUser ? 'bg-green-600 rounded-br-sm' : 'bg-gray-100 rounded-bl-sm'}`}>
-          <Text className={`text-[15px] leading-5 ${isUser ? 'text-white' : 'text-gray-900'}`}>
-            {message.content}
-          </Text>
+          {isUser ? (
+            <Text className="text-[15px] leading-5 text-white">
+              {message.content}
+            </Text>
+          ) : (
+            <MarkdownRenderer content={message.content} />
+          )}
           {message.products && message.products.length > 0 && (
             <View className="mt-3 gap-2">
               {message.products.map((product) => (

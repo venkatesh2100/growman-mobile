@@ -42,10 +42,12 @@
           }
         }
       ],
-      "expo-location",
-      {
-        "locationAlwaysAndWhenInUsePermission": "Allow Growman to use your location to auto-fill your address."
-      },
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Growman to use your location to auto-fill your address."
+        }
+      ],
       [
         "@react-native-google-signin/google-signin",
         {

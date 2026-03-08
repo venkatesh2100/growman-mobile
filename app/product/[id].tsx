@@ -1,24 +1,29 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Image,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AddToCart from '../../components/product/AddToCart';
+import ImageGallery from '../../components/product/ImageGallery';
+import ProductTabs from '../../components/product/ProductTabs';
+import RelatedProducts from '../../components/product/RelatedProducts';
+import SizeSelector from '../../components/product/SizeSelector';
 import { apiFetch } from '../../lib/api';
-import { Product } from '../../lib/types';
-import { useCartStore } from '../../store/cartStore';
+import { Product, ProductSize } from '../../lib/types';
 
 export default function ProductDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const { addItem } = useCartStore();
+  const { id, size } = useLocalSearchParams<{ id: string; size?: string }>();
+  const insets = useSafeAreaInsets();
   const [product, setProduct] = useState<Product | null>(null);
-  const [selectedSize, setSelectedSize] = useState<any>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,9 +32,23 @@ export default function ProductDetailScreen() {
 
   useEffect(() => {
     if (product && product.sizes.length > 0) {
-      setSelectedSize(product.sizes[0]);
+      const sizeId = size ? parseInt(size) : product.sizes[0]?.id;
+      const foundSize = product.sizes.find((s) => s.id === sizeId) || product.sizes[0];
+      setSelectedSize(foundSize);
     }
-  }, [product]);
+  }, [product, size]);
+
+  const handleSizeSelect = (newSize: ProductSize) => {
+    setSelectedSize(newSize);
+    // Update URL params if needed
+    router.setParams({ size: String(newSize.id) });
+  };
+
+  useEffect(() => {
+    if (product?.slug) {
+      fetchRelatedProducts();
+    }
+  }, [product?.slug]);
 
   const loadProduct = async () => {
     try {
@@ -46,104 +65,223 @@ export default function ProductDetailScreen() {
     }
   };
 
-  const handleAddToCart = () => {
-    if (!product) return;
-    
-    if (product.sizes.length > 0 && !selectedSize) {
-      Alert.alert('Error', 'Please select a size');
-      return;
+  const fetchRelatedProducts = async () => {
+    if (!product?.slug) return;
+    try {
+      setLoadingRelated(true);
+      const response = await apiFetch(`/products/${product.slug}/related`);
+      if (response.ok) {
+        const data = await response.json();
+        const products = Array.isArray(data) ? data : data.products || [];
+        setRelatedProducts(products);
+      }
+    } catch (error) {
+      console.error('Error fetching related products:', error);
+      setRelatedProducts([]);
+    } finally {
+      setLoadingRelated(false);
     }
-
-    addItem({
-      productId: product.id,
-      productSizeId: selectedSize?.id,
-      name: product.name,
-      price: selectedSize?.price || product.price,
-      mrp: product.mrp,
-      quantity: 1,
-      image: product.imageUrl || '',
-      label: selectedSize?.label,
-      dimension: selectedSize?.dimension,
-    });
-
-    Alert.alert('Success', 'Product added to cart');
   };
 
   if (loading || !product) {
     return (
       <View className="flex-1 justify-center items-center">
-        <Text>Loading...</Text>
+        <ActivityIndicator size="large" color="#059669" />
       </View>
     );
   }
 
+  const avgRating =
+    product.reviews.length > 0
+      ? product.reviews.reduce((acc, review) => acc + review.rating, 0) /
+        product.reviews.length
+      : 4;
+
   return (
-    <ScrollView className="flex-1 bg-gray-50">
-      <Image
-        source={{ uri: product.imageUrl || 'https://via.placeholder.com/400' }}
-        className="w-full h-[400px] bg-gray-100"
-        resizeMode="cover"
-      />
+    <ScrollView 
+      className="flex-1 bg-green-50"
+      contentContainerStyle={{ paddingTop: insets.top }}>
+      {/* Breadcrumbs */}
+      <View className="px-4 pt-4 pb-2">
+        <View className="flex-row items-center gap-1 flex-wrap">
+          <TouchableOpacity onPress={() => router.push('/(tabs)/home')}>
+            <Text className="text-xs text-gray-500">Home</Text>
+          </TouchableOpacity>
+          <Text className="text-xs text-gray-400">/</Text>
+          <TouchableOpacity
+            onPress={() => router.push(`/category/${product.category.slug}`)}>
+            <Text className="text-xs text-gray-500">{product.category.name}</Text>
+          </TouchableOpacity>
+          {product.subcategory && (
+            <>
+              <Text className="text-xs text-gray-400">/</Text>
+              <TouchableOpacity
+                onPress={() =>
+                  router.push(
+                    `/category/${product.category.slug}/${product.subcategory?.slug}`
+                  )
+                }>
+                <Text className="text-xs text-gray-500">{product.subcategory.name}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          <Text className="text-xs text-gray-400">/</Text>
+          <Text className="text-xs text-gray-900 font-medium" numberOfLines={1}>
+            {product.name}
+          </Text>
+        </View>
+      </View>
 
-      <View className="p-4">
-        <Text className="text-2xl font-bold text-gray-900 mb-3">{product.name}</Text>
+      <View className="px-4 py-4">
+        {/* Image Gallery */}
+        <View className="mb-4">
+          <ImageGallery images={selectedSize?.images || (product.imageUrl ? [product.imageUrl] : [])} />
+        </View>
 
-        <View className="flex-row items-center gap-3 mb-6">
-          <Text className="text-[28px] font-bold text-green-600">₹{selectedSize?.price || product.price}</Text>
-          {product.mrp && product.mrp > (selectedSize?.price || product.price) && (
-            <Text className="text-xl text-gray-400 line-through">₹{product.mrp}</Text>
+        {/* Product Details */}
+        <View className="bg-white rounded-xl p-4 mb-4 shadow-md">
+          {/* Title */}
+          <Text className="text-2xl font-bold text-gray-900 mb-2">{product.name}</Text>
+
+          {/* Ratings + Stock */}
+          <View className="flex-row items-center gap-2 mb-3">
+            <View className="flex-row">
+              {[...Array(5)].map((_, i) => (
+                <MaterialIcons
+                  key={i}
+                  name={i < Math.floor(avgRating) ? 'star' : 'star-border'}
+                  size={16}
+                  color={i < Math.floor(avgRating) ? '#10B981' : '#D1D5DB'}
+                />
+              ))}
+            </View>
+            <Text className="text-xs text-gray-600">
+              {product.reviews.length || ''} reviews
+            </Text>
+            <Text className="text-xs text-gray-400">|</Text>
+            <Text
+              className={`text-xs font-medium ${
+                (selectedSize?.stock ?? 0) > 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+              {(selectedSize?.stock ?? 0) > 0 ? 'In Stock' : 'Out of Stock'}
+            </Text>
+          </View>
+
+          {/* Brand */}
+          {product.brand && (
+            <View className="mb-3">
+              <Text className="text-xs text-gray-600">
+                Brand: <Text className="font-medium text-green-700">{product.brand.name}</Text>
+              </Text>
+            </View>
+          )}
+
+          {/* Price */}
+          <View className="mb-4">
+            <View className="flex-row items-baseline gap-2">
+              <Text className="text-2xl font-bold text-gray-900">
+                ₹{selectedSize?.price.toFixed(0) || product.price?.toFixed(0) || '0'}
+              </Text>
+              {product.mrp &&
+                selectedSize &&
+                product.mrp > selectedSize.price && (
+                  <>
+                    <Text className="text-base text-gray-500 line-through">
+                      ₹{product.mrp.toFixed(0)}
+                    </Text>
+                    <Text className="text-base text-green-600 font-medium">
+                      {Math.round((1 - selectedSize.price / product.mrp) * 100)}% off
+                    </Text>
+                  </>
+                )}
+            </View>
+          </View>
+
+          {/* Description */}
+          <Text className="text-sm text-gray-700 mb-4 leading-relaxed">
+            {product.shortDescription}
+          </Text>
+
+          {/* Size Selector */}
+          {product.sizes.length > 0 && selectedSize && (
+            <View className="mb-4">
+              <Text className="font-semibold text-gray-900 mb-2 text-base">
+                Available Sizes:
+              </Text>
+              <SizeSelector
+                sizes={product.sizes}
+                selectedSize={selectedSize}
+                productSlug={product.slug}
+                onSizeSelect={handleSizeSelect}
+              />
+            </View>
+          )}
+
+          {/* Attributes */}
+          {product.attributes.length > 0 && (
+            <View className="mb-4">
+              <Text className="font-semibold text-gray-900 mb-2 text-base">
+                Key Features:
+              </Text>
+              <View className="gap-2">
+                {product.attributes.map((attr, idx) => (
+                  <View key={idx} className="flex-row items-start">
+                    <Text className="text-green-600 mr-2 mt-1">•</Text>
+                    <Text className="text-sm text-gray-700 flex-1">
+                      <Text className="font-medium">{attr.name}:</Text> {attr.value}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Add to Cart */}
+          {selectedSize && (
+            <View className="mb-4">
+              <AddToCart product={product} selectedSize={selectedSize} />
+            </View>
           )}
         </View>
 
-        {product.description && (
-          <View className="mb-6">
-            <Text className="text-lg font-semibold text-gray-900 mb-3">Description</Text>
-            <Text className="text-base text-gray-700 leading-6">{product.description}</Text>
-          </View>
-        )}
-
-        {product.sizes.length > 0 && (
-          <View className="mb-6">
-            <Text className="text-lg font-semibold text-gray-900 mb-3">Available Sizes</Text>
-            <View className="flex-row flex-wrap gap-3">
-              {product.sizes.map((size) => (
-                <TouchableOpacity
-                  key={size.id}
-                  className={`px-5 py-3 rounded-lg border-2 ${selectedSize?.id === size.id ? 'border-green-600 bg-green-100' : 'border-gray-200 bg-white'}`}
-                  onPress={() => setSelectedSize(size)}>
-                  <Text className={`text-base font-semibold ${selectedSize?.id === size.id ? 'text-green-600' : 'text-gray-700'}`}>
-                    {size.label}
-                  </Text>
-                  <Text className={`text-sm mt-1 ${selectedSize?.id === size.id ? 'text-green-600' : 'text-gray-500'}`}>
-                    ₹{size.price}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {product.attributes.length > 0 && (
-          <View className="mb-6">
-            <Text className="text-lg font-semibold text-gray-900 mb-3">Specifications</Text>
-            {product.attributes.map((attr) => (
-              <View key={attr.id} className="flex-row justify-between py-2 border-b border-gray-200">
-                <Text className="text-base text-gray-500 font-medium">{attr.name}:</Text>
-                <Text className="text-base text-gray-900">{attr.value}</Text>
+        {/* Benefits */}
+        <View className="flex-row gap-3 mb-4">
+          {[
+            { icon: 'local-shipping', title: 'Free Delivery', sub: 'Delivery in 2-4 days' },
+            { icon: 'verified', title: 'Plant Health', sub: 'Quality checked' },
+            // { icon: 'assignment-return', title: 'Easy Returns', sub: '10 Day Policy' },
+          ].map(({ icon, title, sub }, i) => (
+            <View
+              key={i}
+              className="flex-1 flex-row items-center p-3 rounded-lg border border-gray-100">
+              <View className="bg-green-50 p-2 rounded-full mr-2">
+                <MaterialIcons name={icon as any} size={18} color="#059669" />
               </View>
-            ))}
-          </View>
-        )}
+              <View className="flex-1">
+                <Text className="text-xs font-medium text-gray-900">{title}</Text>
+                <Text className="text-[10px] text-gray-500">{sub}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
 
-        <TouchableOpacity
-          className="flex-row items-center justify-center bg-green-600 p-4 rounded-xl gap-2 mt-2"
-          onPress={handleAddToCart}>
-          <MaterialIcons name="shopping-cart" size={24} color="#FFFFFF" />
-          <Text className="text-lg font-semibold text-white">Add to Cart</Text>
-        </TouchableOpacity>
+        {/* Tabs */}
+        <ProductTabs
+          fullDescription={product.fullDescription || product.description || ''}
+          specifications={product.specifications}
+          reviews={product.reviews}
+        />
+
+        {/* Related Products */}
+        {loadingRelated ? (
+          <View className="mt-6">
+            <Text className="text-lg font-bold mb-4">Related Products</Text>
+            <ActivityIndicator size="small" color="#059669" />
+          </View>
+        ) : (
+          <RelatedProducts products={relatedProducts} />
+        )}
       </View>
     </ScrollView>
   );
 }
-
-

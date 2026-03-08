@@ -5,6 +5,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiFetch } from '../lib/api';
 
 interface Order {
@@ -21,6 +22,7 @@ interface Order {
 }
 
 export default function OrdersScreen() {
+  const insets = useSafeAreaInsets();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,7 +78,7 @@ export default function OrdersScreen() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
       {orders.length === 0 ? (
         <View className="flex-1 justify-center items-center p-8">
           <Text className="text-lg text-gray-500">No orders yet</Text>

@@ -9,12 +9,14 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { apiFetch } from '../../lib/api';
 import { User } from '../../lib/types';
 import { useAuthStore } from '../../store/authStore';
 
 export default function AccountScreen() {
+  const insets = useSafeAreaInsets();
   const { clearAuth, token } = useAuthStore();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,10 @@ export default function AccountScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      className="flex-1 bg-gray-50" 
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingTop: insets.top }}>
       {/* Profile Section */}
       <Animated.View entering={FadeInDown.duration(400)} className="bg-white p-8 items-center mb-4">
         <View className="relative mb-4">
