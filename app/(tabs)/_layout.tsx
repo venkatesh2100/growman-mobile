@@ -1,9 +1,11 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-
+import { StatusBar } from 'expo-status-bar';
 export default function TabLayout() {
   return (
-    <Tabs
+    <>
+    <StatusBar style="dark" />
+     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#059669',
@@ -14,6 +16,7 @@ export default function TabLayout() {
           borderTopColor: '#E5E7EB',
         },
       }}>
+
       <Tabs.Screen
         name="home"
         options={{
@@ -50,7 +53,10 @@ export default function TabLayout() {
           ),
         }}
       />
+
     </Tabs>
+    
+    </>
+
   );
 }
-

@@ -106,9 +106,9 @@ export default function ShopScreen() {
   );
 
   return (
-    <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
+    <View className="flex-1 bg-gray-50 " >
       {/* Search and Filter Bar */}
-      <View className="flex-row p-4 bg-white border-b border-gray-200 gap-3">
+      <View className="flex-row p-4  border-b  pt-[60px]  border-gray-200 gap-3">
         <View className="flex-1 flex-row items-center bg-gray-100 rounded-xl px-4 h-12">
           <MaterialIcons name="search" size={22} color="#6B7280" className="mr-3" />
           <TextInput

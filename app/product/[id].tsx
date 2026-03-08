@@ -98,7 +98,7 @@ export default function ProductDetailScreen() {
       : 4;
 
   return (
-    <ScrollView 
+    <ScrollView
       className="flex-1 bg-green-50"
       contentContainerStyle={{ paddingTop: insets.top }}>
       {/* Breadcrumbs */}
@@ -117,7 +117,7 @@ export default function ProductDetailScreen() {
               <Text className="text-xs text-gray-400">/</Text>
               <TouchableOpacity
                 onPress={() =>
-                  router.push(
+                  router.push(  
                     `/category/${product.category.slug}/${product.subcategory?.slug}`
                   )
                 }>

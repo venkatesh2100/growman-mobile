@@ -64,13 +64,16 @@ export default function AccountScreen() {
   }
 
   return (
-    <ScrollView 
-      className="flex-1 bg-gray-50" 
+    <ScrollView
+      className="flex-1 bg-gray-50"
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingTop: insets.top }}>
+
       {/* Profile Section */}
-      <Animated.View entering={FadeInDown.duration(400)} className="bg-white p-8 items-center mb-4">
-        <View className="relative mb-4">
+
+      <Animated.View entering={FadeInDown.duration(400)} className="bg-gray-50 p-8 items-center mb-4">
+
+        <View className="relative mb-4 ">
           <View className="w-24 h-24 rounded-full bg-green-100 justify-center items-center">
             <MaterialIcons name="person" size={48} color="#059669" />
           </View>
@@ -192,5 +195,3 @@ export default function AccountScreen() {
     </ScrollView>
   );
 }
-
-

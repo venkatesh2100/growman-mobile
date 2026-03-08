@@ -82,6 +82,7 @@ export default function CartScreen() {
 
   return (
     <View className="flex-1 bg-gray-50">
+  
       {items.length === 0 ? (
         <View className="flex-1 justify-center items-center p-8">
           <MaterialIcons name="shopping-bag" size={64} color="#D1D5DB" />
@@ -98,8 +99,8 @@ export default function CartScreen() {
         </View>
       ) : (
         <>
-          <ScrollView 
-            className="flex-1" 
+          <ScrollView
+            className="flex-1"
             contentContainerStyle={{ padding: 16, paddingTop: insets.top + 16 }}>
             {items.map((item) => (
               <View key={item.id}>
