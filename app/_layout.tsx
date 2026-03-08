@@ -1,24 +1,30 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { Slot, Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import  { ToastContainer } from '../components/Toast';
+import Chatbot from '@/components/Chatbot';
+import './global.css';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        {/* Render Slot first so Expo Router mounts the navigator immediately */}
+        {!mounted ? (
+          <Slot />
+        ) : (
+          <Stack screenOptions={{ headerShown: false }} />
+        )}
+        <ToastContainer />
+        <Chatbot />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
