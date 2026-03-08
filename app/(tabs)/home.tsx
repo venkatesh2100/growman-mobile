@@ -1,12 +1,11 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Linking from "expo-linking";
-import * as StatusBar from "expo-status-bar";
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
 } from "expo-speech-recognition";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import Loading from "../../components/Loading";
@@ -85,16 +85,6 @@ export default function HomeScreen() {
   useEffect(() => {
     loadData();
   }, []);
-
-  // Set status bar light only when Home is focused; reset to dark when leaving
-  useFocusEffect(
-    useCallback(() => {
-      StatusBar.setStatusBarStyle("light");
-      return () => {
-        StatusBar.setStatusBarStyle("dark");
-      };
-    }, [])
-  );
 
   const handleScanPlant = useCallback(async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -238,14 +228,24 @@ export default function HomeScreen() {
       entering={FadeInDown.delay(index * 100).duration(400)}
     >
       <TouchableOpacity
-        className="w-[100px] items-center bg-white rounded-2xl p-4 mr-3 shadow-md"
+        className="w-[110px] items-center bg-white rounded-2xl p-5 mr-4 active:opacity-90"
+        style={{
+          shadowColor: "#059669",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+          elevation: 3,
+        }}
         onPress={() => router.push(`/category/${category.slug}`)}
       >
-        <View className="w-14 h-14 rounded-full bg-green-100 justify-center items-center mb-2">
-          <MaterialIcons name="local-florist" size={32} color="#059669" />
+        <View
+          className="w-16 h-16 rounded-2xl justify-center items-center mb-3"
+          style={{ backgroundColor: "rgba(5, 150, 105, 0.08)" }}
+        >
+          <MaterialIcons name="local-florist" size={30} color="#059669" />
         </View>
         <Text
-          className="text-[13px] font-semibold text-gray-900 text-center"
+          className="text-[13px] font-semibold text-gray-800 text-center"
           numberOfLines={1}
         >
           {category.name}
@@ -256,84 +256,119 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      {/* Fixed status bar background - prevents content from mixing with status bar when scrolled */}
+      {/* Fixed status bar overlay - matches gradient top so light status bar icons stay visible when scrolled */}
       <View
-        style={{ height: insets.top, backgroundColor: "#059669" }}
+        style={{ height: insets.top, backgroundColor: "#065f46" }}
         className="absolute top-0 left-0 right-0 z-10"
+        pointerEvents="none"
       />
       <ScrollView
         className="flex-1"
         style={{ backgroundColor: "transparent" }}
-        contentContainerStyle={{ paddingTop: insets.top }}
+        contentContainerStyle={{ paddingTop: 0 }}
         showsVerticalScrollIndicator={false}
       >
-      <View className="flex-row p-4 bg-green-600 gap-3">
-        <View className="flex-1 flex-row items-center bg-gray-100 rounded-xl px-4 h-12">
-          <TouchableOpacity
-            className="flex-1 flex-row items-center"
-            onPress={() => openSearch()}
-            activeOpacity={0.8}
+      {/* Hero gradient block - extends to very top with smooth shading */}
+      <LinearGradient
+        colors={["#065f46", "#047857", "#059669", "#10b981"]}
+        locations={[0, 0.3, 0.65, 1]}
+        style={{ paddingTop: insets.top, paddingBottom: 32, paddingHorizontal: 20 }}
+        className="pb-10 rounded-b-[32px] overflow-hidden"
+      >
+        {/* Search bar - frosted glass style */}
+        <View className="flex-row gap-3 mb-6">
+          <View
+            className="flex-1 flex-row items-center rounded-2xl px-4 h-14"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.95)",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              elevation: 4,
+            }}
           >
-            <MaterialIcons name="search" size={22} color="#6B7280" />
-            <Text className="ml-3 text-base text-gray-500 flex-1">
-              Search for plants...
-            </Text>
-          </TouchableOpacity>
-          <View className="flex-row items-center border-l border-gray-300 pl-3 ml-1">
             <TouchableOpacity
-              onPress={handleScanPlant}
-              disabled={scanning}
-              className="p-1.5"
+              className="flex-1 flex-row items-center"
+              onPress={() => openSearch()}
+              activeOpacity={0.8}
             >
-              {scanning ? (
-                <ActivityIndicator size="small" color="#059669" />
-              ) : (
-                <MaterialIcons name="document-scanner" size={22} color="#059669" />
-              )}
+              <MaterialIcons name="search" size={22} color="#059669" />
+              <Text className="ml-3 text-base text-gray-500 flex-1">
+                Search for plants...
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleVoiceSearch}
-              disabled={scanning}
-              className="p-1.5 ml-1"
-            >
-              <MaterialIcons
-                name="mic"
-                size={22}
-                color={listening ? "#DC2626" : "#059669"}
-              />
-            </TouchableOpacity>
+            <View className="flex-row items-center border-l border-gray-200 pl-3 ml-1">
+              <TouchableOpacity
+                onPress={handleScanPlant}
+                disabled={scanning}
+                className="p-2 rounded-full active:bg-gray-100"
+              >
+                {scanning ? (
+                  <ActivityIndicator size="small" color="#059669" />
+                ) : (
+                  <MaterialIcons name="document-scanner" size={22} color="#059669" />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleVoiceSearch}
+                disabled={scanning}
+                className="p-2 ml-1 rounded-full active:bg-gray-100"
+              >
+                <MaterialIcons
+                  name="mic"
+                  size={22}
+                  color={listening ? "#DC2626" : "#059669"}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
-      {/* Hero Section */}
-      <Animated.View
-        entering={FadeInUp.duration(500)}
-        className="bg-green-600 pt-6 pb-10 px-5 rounded-b-[30px]"
-      >
-        <View style={{ maxWidth: width - 40 }}>
-          <Text className="text-[36px] font-bold text-white mb-4 leading-[44px]">
-            Bring Nature{"\n"}Into Your{" "}
-            <Text className="text-green-100">Home</Text>
+
+        {/* Hero content */}
+        <Animated.View entering={FadeInUp.duration(500)} style={{ maxWidth: width - 40 }}>
+          <Text className="text-[34px] font-extrabold text-white mb-2 leading-[42px] tracking-tight">
+            Bring Nature
           </Text>
-          <Text className="text-base text-green-100 mb-6 leading-6">
-            Discover the perfect plants to transform your space. Our collection
-            of hand-picked greenery will breathe life into your home.
+          <Text className="text-[34px] font-extrabold mb-4 leading-[42px] tracking-tight">
+            Into Your{" "}
+            <Text style={{ color: "#d1fae5", textShadowColor: "rgba(0,0,0,0.15)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>
+              Home
+            </Text>
+          </Text>
+          <Text className="text-[15px] mb-8 leading-6 max-w-[90%]" style={{ color: "rgba(255,255,255,0.92)" }}>
+            Discover hand-picked plants to transform your space. Fresh greenery, delivered with care.
           </Text>
           <TouchableOpacity
-            className="flex-row items-center justify-center bg-white py-3.5 px-6 rounded-[30px] gap-2"
+            className="flex-row items-center justify-center bg-white py-4 px-8 rounded-2xl gap-2 active:opacity-90"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
             onPress={() => router.push("/(tabs)/shop")}
           >
-            <Text className="text-base font-semibold text-green-600">
-              Shop Plants
-            </Text>
-            <MaterialIcons name="arrow-forward" size={20} color="#059669" />
+            <Text className="text-base font-bold" style={{ color: "#047857" }}>Shop Plants</Text>
+            <MaterialIcons name="arrow-forward" size={20} color="#047857" />
           </TouchableOpacity>
-        </View>
-      </Animated.View>
+        </Animated.View>
+
+        {/* Decorative circles for depth */}
+        <View
+          className="absolute rounded-full"
+          style={{ top: 80, right: -40, width: 120, height: 120, backgroundColor: "rgba(255,255,255,0.1)" }}
+        />
+        <View
+          className="absolute rounded-full"
+          style={{ bottom: 60, left: -24, width: 80, height: 80, backgroundColor: "rgba(255,255,255,0.08)" }}
+        />
+      </LinearGradient>
 
       {/* Categories Section */}
       {categories.length > 0 && (
-        <View className="mt-8 px-4">
+        <View className="mt-10 px-4">
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-[22px] font-bold text-gray-900">
               Shop by Category
@@ -357,7 +392,7 @@ export default function HomeScreen() {
       )}
 
       {/* Featured Products */}
-      <View className="mt-8 px-4">
+      <View className="mt-10 px-4 pb-8">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-[22px] font-bold text-gray-900">
             Featured Plants

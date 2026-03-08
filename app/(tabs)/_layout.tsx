@@ -1,12 +1,15 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Tabs, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import SearchModal from '../../components/SearchModal';
 
 export default function TabLayout() {
+  const segments = useSegments();
+  const isHomeTab = segments[0] === '(tabs)' && segments[1] === 'home';
+
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style={isHomeTab ? 'light' : 'dark'} />
       <SearchModal />
       <Tabs
       screenOptions={{
