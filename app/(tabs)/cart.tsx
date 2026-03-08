@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCartStore } from '../../store/cartStore';
+import { useSearchStore } from '../../store/searchStore';
 
 export default function CartScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const openSearch = useSearchStore((s) => s.openSearch);
   const { items, removeItem, updateQuantity, getSubtotal } = useCartStore();
 
   const handleCheckout = () => {
@@ -33,11 +35,17 @@ export default function CartScreen() {
   const renderCartItem = ({ item }: { item: any }) => (
     <View className="bg-white rounded-xl p-3 mb-3 shadow-md">
       <View className="flex-row items-start gap-3">
+        <View className='flex items-center '>
         <Image
           source={{ uri: item.image || 'https://via.placeholder.com/100' }}
           className="w-20 h-20 rounded-lg bg-gray-100"
           resizeMode="cover"
         />
+           <Text className="text-sm  pt-6 font-semibold text-gray-900 mt-2">
+           ₹{(item.price * item.quantity).toFixed(0)}
+          </Text>
+        </View>
+   
         <View className="flex-1 min-w-0">
           <Text className="text-base font-semibold text-gray-900 mb-1" numberOfLines={2}>
             {item.name}
@@ -65,16 +73,19 @@ export default function CartScreen() {
                 onPress={() => updateQuantity(item.id, item.quantity + 1)}>
                 <MaterialIcons name="add" size={16} color="#374151" />
               </TouchableOpacity>
+
             </View>
+            {/* <Text className="text-sm font-semibold text-gray-900 mt-2">
+            ₹{(item.price * item.quantity).toFixed(0)}
+          </Text> */}
             <TouchableOpacity
               className="text-red-500 active:text-red-700 p-1.5 active:bg-red-50 rounded"
               onPress={() => removeItem(item.id)}>
               <MaterialIcons name="delete" size={20} color="#EF4444" />
             </TouchableOpacity>
+            
           </View>
-          <Text className="text-sm font-semibold text-gray-900 mt-2">
-            ₹{(item.price * item.quantity).toFixed(0)}
-          </Text>
+        
         </View>
       </View>
     </View>
@@ -82,13 +93,23 @@ export default function CartScreen() {
 
   return (
     <View className="flex-1 bg-gray-50">
-  
+      {/* Search header */}
+      <View
+        className="flex-row items-center justify-between px-4 border-b border-gray-200 bg-white"
+        style={{ paddingTop: insets.top + 12, paddingBottom: 12 }}
+      >
+        <Text className="text-xl font-bold text-gray-900">Cart</Text>
+        <TouchableOpacity onPress={() => openSearch()} className="p-2">
+          <MaterialIcons name="search" size={24} color="#059669" />
+        </TouchableOpacity>
+      </View>
+
       {items.length === 0 ? (
         <View className="flex-1 justify-center items-center p-8">
           <MaterialIcons name="shopping-bag" size={64} color="#D1D5DB" />
-          <Text className="text-xl font-semibold text-gray-800 mt-4 mb-2">Your cart is empty</Text>
+          <Text className="text-xl font-semibold text-gray-800 mt-4 mb-2">Your cart is empty </Text>
           <Text className="text-base text-gray-600 mb-6 text-center">
-            Looks like you haven&apos;t added any plants to your cart yet.
+            Looks like you haven&apos;t added any plants.
           </Text>
           <TouchableOpacity
             className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium active:bg-green-700 flex-row items-center"
@@ -101,7 +122,7 @@ export default function CartScreen() {
         <>
           <ScrollView
             className="flex-1"
-            contentContainerStyle={{ padding: 16, paddingTop: insets.top + 16 }}>
+            contentContainerStyle={{ padding: 16 }}>
             {items.map((item) => (
               <View key={item.id}>
                 {renderCartItem({ item })}
@@ -145,7 +166,7 @@ export default function CartScreen() {
             </View>
 
             <TouchableOpacity
-              className="w-full bg-green-600 py-3 rounded-lg font-semibold active:bg-green-700 flex-row items-center justify-center"
+              className="w-full bg-green-600 py-3  rounded-lg font-semibold active:bg-green-700 flex-row items-center justify-center"
               onPress={handleCheckout}>
               <Text className="text-base font-semibold text-white mr-2">Proceed to Checkout</Text>
               <MaterialIcons name="arrow-forward" size={20} color="#FFFFFF" />

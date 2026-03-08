@@ -10,9 +10,13 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.venky2100.growmanmobile"
+      "bundleIdentifier": "com.venky2100.growmanmobile",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["tez", "phonepe", "paytmmp"]
+      }
     },
     "android": {
+      "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/assets/adaptive-icon.png",
@@ -54,7 +58,14 @@
           "iosUrlScheme": "com.googleusercontent.apps.992439438436-bsqv6sv50h6efkvmiah7so0kn17vjcg2"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Growman to use the microphone for voice search.",
+          "speechRecognitionPermission": "Allow Growman to use speech recognition."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

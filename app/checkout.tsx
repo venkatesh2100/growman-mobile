@@ -1,20 +1,23 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Modal,
+  Platform,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import RazorpayCheckout from 'react-native-razorpay';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Loading from '../components/Loading';
+import SelectField from '../components/SelectField';
 import { toast } from '../components/Toast';
+import { RAZORPAY_KEY_ID } from '../config/env';
 import { apiFetch } from '../lib/api';
 import { getAllStateNames, indianStates } from '../lib/data/indianStatesCities';
 import { getCurrentLocation } from '../lib/utils/geolocation';
@@ -385,75 +388,105 @@ export default function CheckoutScreen() {
 
       const orderData = await orderRes.json();
 
-      // For React Native, we'll use WebView or react-native-razorpay-checkout
-      // For now, we'll show an alert and redirect to order success
-      // In production, integrate with react-native-razorpay-checkout
-      Alert.alert(
-        'Payment',
-        'Payment integration will be handled via Razorpay SDK. For now, redirecting to order success.',
-        [
-          {
-            text: 'OK',
-            onPress: async () => {
-              // In production, verify payment here
-              setPaymentStatus('success');
+      if (!RAZORPAY_KEY_ID) {
+        throw new Error('Razorpay is not configured. Please add EXPO_PUBLIC_RAZORPAY_KEY_ID to your .env');
+      }
 
-              // Auto-save address if user entered new details and is not logged in
-              if (!isAuthenticated && customerInfo.email) {
-                try {
-                  await apiFetch('/checkout/save-address', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                      email: customerInfo.email,
-                      phone: customerInfo.phone,
-                      name: customerInfo.name,
-                      address: {
-                        line: customerInfo.addressLine,
-                        city: customerInfo.city,
-                        state: customerInfo.state,
-                        pincode: customerInfo.pincode,
-                        country: customerInfo.country,
-                      },
-                    }),
-                  });
-                } catch (err) {
-                  console.error('Error saving address:', err);
-                }
-              }
+      // Razorpay native SDK works on iOS/Android only; on web use the web app
+      if (Platform.OS === 'web') {
+        throw new Error('Please complete payment on the Growman web app or use the mobile app on your device.');
+      }
 
-              // Clear cart
-              clearCart();
-              // Redirect to success page
-              setTimeout(() => {
-                router.push(`/order-success?orderId=${String(orderData.orderId)}` as any);
-              }, 2000);
-            },
-          },
-        ]
-      );
+      const razorpayOptions = {
+        description: `Order #${orderData.orderId}`,
+        image: 'https://i.imgur.com/3g7nmJC.png',
+        currency: 'INR',
+        key: RAZORPAY_KEY_ID,
+        amount: String(orderData.amount),
+        order_id: orderData.id,
+        name: 'Growman',
+        prefill: {
+          email: customerInfo.email,
+          contact: customerInfo.phone,
+          name: customerInfo.name,
+        },
+        theme: { color: '#059669' },
+      };
+
+      const paymentData = await RazorpayCheckout.open(razorpayOptions);
+
+      // Verify payment with backend
+      const verifyRes = await apiFetch('/razorpay/verify', {
+        method: 'POST',
+        body: JSON.stringify({
+          razorpay_order_id: paymentData.razorpay_order_id,
+          razorpay_payment_id: paymentData.razorpay_payment_id,
+          razorpay_signature: paymentData.razorpay_signature,
+        }),
+      });
+
+      if (!verifyRes.ok) {
+        const errorData = await verifyRes.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Payment verification failed');
+      }
+
+      setPaymentStatus('success');
+
+      // Auto-save address if user entered new details and is not logged in
+      if (!isAuthenticated && customerInfo.email) {
+        try {
+          await apiFetch('/checkout/save-address', {
+            method: 'POST',
+            body: JSON.stringify({
+              email: customerInfo.email,
+              phone: customerInfo.phone,
+              name: customerInfo.name,
+              address: {
+                line: customerInfo.addressLine,
+                city: customerInfo.city,
+                state: customerInfo.state,
+                pincode: customerInfo.pincode,
+                country: customerInfo.country,
+              },
+            }),
+          });
+        } catch (err) {
+          console.error('Error saving address:', err);
+        }
+      }
+
+      clearCart();
+      toast('Payment successful!', 'success');
+      setTimeout(() => {
+        router.push(`/order-success?orderId=${String(orderData.orderId)}` as any);
+      }, 1500);
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : 'An error occurred. Please try again.';
-      setError(errorMsg);
+      const razorpayError = err as { code?: number; description?: string };
+      const isCancelled = razorpayError?.code === 0 || razorpayError?.code === 2;
+      const errorMsg = isCancelled
+        ? 'Payment cancelled'
+        : err instanceof Error
+          ? err.message
+          : 'An error occurred. Please try again.';
+      setError(isCancelled ? null : errorMsg);
       setPaymentStatus('failed');
-      toast(errorMsg, 'error');
+      if (!isCancelled) {
+        toast(errorMsg, 'error');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   if (!loaded) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#059669" />
-      </View>
-    );
+    return <Loading />;
   }
 
   if (items.length === 0) {
     return (
       <View className="flex-1 justify-center items-center p-8">
         <MaterialIcons name="shopping-bag" size={64} color="#D1D5DB" />
-        <Text className="text-2xl font-semibold text-gray-800 mb-2">Your cart is empty</Text>
+        <Text className="text-2xl font-semibold text-gray-800 my-2">Your cart is empty</Text>
         <Text className="text-base text-gray-600 mb-6 text-center">Add some plants to your cart to continue</Text>
         <TouchableOpacity
           className="bg-green-600 px-6 py-3 rounded-lg active:bg-green-700"
@@ -480,7 +513,7 @@ export default function CheckoutScreen() {
 
           <View className="space-y-4">
             <View>
-              <Text className="text-sm font-medium text-gray-700 mb-2">Full Name *</Text>
+              <Text className="text-sm font-medium text-gray-700 my-2">Full Name *</Text>
               <TextInput
                 className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg"
                 value={customerInfo.name}
@@ -491,7 +524,7 @@ export default function CheckoutScreen() {
             </View>
 
             <View>
-              <Text className="text-sm font-medium text-gray-700 mb-2">Email Address *</Text>
+              <Text className="text-sm font-medium text-gray-700 my-2">Email Address *</Text>
               <TextInput
                 className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg"
                 value={customerInfo.email}
@@ -509,7 +542,7 @@ export default function CheckoutScreen() {
             </View>
 
             <View>
-              <Text className="text-sm font-medium text-gray-700 mb-2">Phone Number *</Text>
+              <Text className="text-sm font-medium text-gray-700 my-2">Phone Number *</Text>
               <TextInput
                 className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg"
                 value={customerInfo.phone}
@@ -528,24 +561,16 @@ export default function CheckoutScreen() {
               <Text className="text-xs text-gray-500 mt-1">10 digits, starting with 6-9</Text>
             </View>
 
-            <View>
-              <Text className="text-sm font-medium text-gray-700 mb-2">Country</Text>
-              <View className="border border-gray-300 rounded-lg">
-                <Picker
-                  selectedValue={customerInfo.country}
-                  onValueChange={(value) => setCustomerInfo({ ...customerInfo, country: value })}>
-                  <Picker.Item label="India" value="India" />
-                </Picker>
-              </View>
-            </View>
-
-            <View>
-              <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-sm font-medium text-gray-700">
-                  Address Line * (include Door No, Building Name, Street)
-                </Text>
-                <TouchableOpacity
-                  className="flex-row items-center gap-2"
+            <View className='flex '>
+              <Text className="text-sm font-medium text-gray-700 my-2">Country</Text>
+              <SelectField
+                value={customerInfo.country}
+                onValueChange={(value) => setCustomerInfo({ ...customerInfo, country: value })}
+                options={[{ label: 'India', value: 'India' }]}
+                placeholder="Select country"
+              />
+              <TouchableOpacity
+                  className="flex-row items-center gap-2 my-2"
                   onPress={handleLocateMe}
                   disabled={locating}>
                   {locating ? (
@@ -560,6 +585,13 @@ export default function CheckoutScreen() {
                     </>
                   )}
                 </TouchableOpacity>
+            </View>
+
+            <View>
+              <View className="flex-row items-center justify-between my-2">
+                <Text className="text-sm font-medium text-gray-700">
+                  Address Line * (include Door No, Building Name, Street
+                </Text>
               </View>
               <TextInput
                 className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg"
@@ -573,21 +605,20 @@ export default function CheckoutScreen() {
 
             <View className="flex-row gap-4">
               <View className="flex-1">
-                <Text className="text-sm font-medium text-gray-700 mb-2">State *</Text>
-                <View className="border border-gray-300 rounded-lg">
-                  <Picker
-                    selectedValue={customerInfo.state}
-                    onValueChange={(value) => setCustomerInfo({ ...customerInfo, state: value })}>
-                    <Picker.Item label="Select State" value="" />
-                    {getAllStateNames().map((state) => (
-                      <Picker.Item key={state} label={state} value={state} />
-                    ))}
-                  </Picker>
-                </View>
+                <Text className="text-sm font-medium text-gray-700 my-2">State *</Text>
+                <SelectField
+                  value={customerInfo.state}
+                  onValueChange={(value) => setCustomerInfo({ ...customerInfo, state: value })}
+                  options={[
+                    { label: 'Select State', value: '' },
+                    ...getAllStateNames().map((state) => ({ label: state, value: state })),
+                  ]}
+                  placeholder="Select State"
+                />
               </View>
 
               <View className="flex-1">
-                <Text className="text-sm font-medium text-gray-700 mb-2">City *</Text>
+                <Text className="text-sm font-medium text-gray-700 my-2">City *</Text>
                 <TextInput
                   className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg"
                   value={customerInfo.city}
@@ -599,7 +630,7 @@ export default function CheckoutScreen() {
             </View>
 
             <View>
-              <Text className="text-sm font-medium text-gray-700 mb-2">Pincode *</Text>
+              <Text className="text-sm font-medium text-gray-700 my-2">Pincode *</Text>
               <TextInput
                 className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg"
                 value={customerInfo.pincode}
@@ -646,7 +677,7 @@ export default function CheckoutScreen() {
             ) : (
               <View className="space-y-4">
                 <View>
-                  <Text className="text-sm font-medium text-gray-700 mb-2">Enter 6-digit OTP</Text>
+                  <Text className="text-sm font-medium text-gray-700 my-2">Enter 6-digit OTP</Text>
                   <TextInput
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest"
                     value={otp}
@@ -714,6 +745,7 @@ export default function CheckoutScreen() {
         {/* Order Items */}
         <View className="bg-white rounded-xl p-4 mb-4 shadow-md">
           <Text className="text-lg font-semibold text-gray-900 mb-4">Order Items</Text>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/cart')}>
           <View className="space-y-2">
             {items.map((item) => (
               <View key={item.id} className="flex-row items-center gap-3 p-2 border border-gray-200 rounded-lg">
@@ -732,6 +764,8 @@ export default function CheckoutScreen() {
               </View>
             ))}
           </View>
+          </TouchableOpacity>
+      
         </View>
 
         {/* Order Summary */}

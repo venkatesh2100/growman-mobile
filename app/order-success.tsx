@@ -2,13 +2,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     ScrollView,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Loading from '../components/Loading';
 import { apiFetch } from '../lib/api';
 
 interface Order {
@@ -48,19 +48,16 @@ export default function OrderSuccessScreen() {
   }, [fetchOrder]);
 
   if (loading) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#059669" />
-      </View>
-    );
+    return <Loading />;
   }
 
   return (
-    <ScrollView 
+    <ScrollView
       className="flex-1 bg-gray-50"
-      contentContainerStyle={{ paddingTop: insets.top }}>
-      <View className="max-w-2xl mx-auto px-4 py-12">
-        <View className="bg-white rounded-xl shadow-lg p-8">
+      contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 24 }}
+      showsVerticalScrollIndicator={false}>
+      <View className="w-full max-w-2xl mx-auto px-4 py-8">
+        <View className="bg-white rounded-xl shadow-lg p-6">
           <View className="items-center mb-6">
             <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center">
               <MaterialIcons name="check-circle" size={48} color="#059669" />
@@ -105,15 +102,15 @@ export default function OrderSuccessScreen() {
             </View>
           )}
 
-          <View className="flex-row gap-4 justify-center mb-8">
+          <View className="gap-3 mb-8">
             <TouchableOpacity
-              className="bg-green-600 px-6 py-3 rounded-lg active:bg-green-700 flex-row items-center"
+              className="w-full bg-green-600 py-3 rounded-xl active:bg-green-700 flex-row items-center justify-center"
               onPress={() => router.push('/(tabs)/shop')}>
               <MaterialIcons name="shopping-bag" size={20} color="#FFFFFF" />
               <Text className="text-base font-medium text-white ml-2">Continue Shopping</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              className="bg-gray-200 px-6 py-3 rounded-lg active:bg-gray-300 flex-row items-center"
+              className="w-full bg-gray-200 py-3 rounded-xl active:bg-gray-300 flex-row items-center justify-center"
               onPress={() => router.push('/(tabs)/home')}>
               <MaterialIcons name="home" size={20} color="#374151" />
               <Text className="text-base font-medium text-gray-800 ml-2">Go Home</Text>

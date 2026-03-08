@@ -1,11 +1,14 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import SearchModal from '../../components/SearchModal';
+
 export default function TabLayout() {
   return (
     <>
-    <StatusBar style="dark" />
-     <Tabs
+      <StatusBar style="dark" />
+      <SearchModal />
+      <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#059669',

@@ -2,7 +2,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     FlatList,
     ScrollView,
     Text,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import Loading from '../../components/Loading';
 import ProductCard from '../../components/ProductCard';
 import { apiFetch } from '../../lib/api';
 import { Product } from '../../lib/types';
@@ -134,11 +134,7 @@ export default function CategoryScreen() {
   );
 
   if (loading && products.length === 0) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#059669" />
-      </View>
-    );
+    return <Loading />;
   }
 
   return (

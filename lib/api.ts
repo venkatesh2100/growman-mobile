@@ -115,3 +115,43 @@ export async function searchProducts(
     };
   }
 }
+
+/**
+ * Identify plant from image using Pl@ntNet API (proxied via backend)
+ */
+export async function identifyPlant(imageUri: string): Promise<{
+  bestMatch?: string;
+  results?: Array<{ score: number; species?: { scientificName?: string; commonNames?: string[] } }>;
+  remainingIdentificationRequests?: number;
+}> {
+  const apiUrl = getApiUrl();
+  const url = `${apiUrl}/plants/identify`;
+
+  const authStore = useAuthStore.getState();
+  const token = authStore.token;
+
+  const formData = new FormData();
+  formData.append('image', {
+    uri: imageUri,
+    type: 'image/jpeg',
+    name: 'plant.jpg',
+  } as any);
+
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error((err as { error?: string })?.error || 'Plant identification failed');
+  }
+
+  return response.json();
+}

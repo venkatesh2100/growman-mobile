@@ -1,16 +1,16 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useSearchStore } from '../../store/searchStore';
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Loading from '../../components/Loading';
 import ProductCard from '../../components/ProductCard';
 import { apiFetch, searchProducts } from '../../lib/api';
 import { Product } from '../../lib/types';
@@ -20,6 +20,9 @@ type SortBy = 'name' | 'price' | 'newest';
 export default function ShopScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const openSearch = useSearchStore((s) => s.openSearch);
+  const pendingSearchQuery = useSearchStore((s) => s.pendingSearchQuery);
+  const consumePendingQuery = useSearchStore((s) => s.consumePendingQuery);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +33,13 @@ export default function ShopScreen() {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  useEffect(() => {
+    const pending = consumePendingQuery();
+    if (pending !== null) {
+      setSearchQuery(pending);
+    }
+  }, [pendingSearchQuery]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -108,22 +118,30 @@ export default function ShopScreen() {
   return (
     <View className="flex-1 bg-gray-50 " >
       {/* Search and Filter Bar */}
-      <View className="flex-row p-4  border-b  pt-[60px]  border-gray-200 gap-3">
-        <View className="flex-1 flex-row items-center bg-gray-100 rounded-xl px-4 h-12">
+      <View className="flex-row p-4 border-b pt-[60px] border-gray-200 gap-3">
+        <TouchableOpacity
+          className="flex-1 flex-row items-center bg-gray-100 rounded-xl px-4 h-12"
+          onPress={() => openSearch(searchQuery)}
+          activeOpacity={0.8}
+        >
           <MaterialIcons name="search" size={22} color="#6B7280" className="mr-3" />
-          <TextInput
-            className="flex-1 text-base text-gray-900"
-            placeholder="Search for plants..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor="#9CA3AF"
-          />
+          <Text
+            className={`flex-1 text-base ${searchQuery ? 'text-gray-900' : 'text-gray-500'}`}
+            numberOfLines={1}
+          >
+            {searchQuery || 'Search for plants...'}
+          </Text>
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                setSearchQuery('');
+              }}
+            >
               <MaterialIcons name="close" size={22} color="#6B7280" />
             </TouchableOpacity>
           )}
-        </View>
+        </TouchableOpacity>
         <TouchableOpacity
           className="w-12 h-12 rounded-xl bg-green-100 justify-center items-center"
           onPress={() => setShowFilters(true)}>
@@ -142,9 +160,7 @@ export default function ShopScreen() {
 
       {/* Products List */}
       {loading || searching ? (
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#059669" />
-        </View>
+        <Loading />
       ) : products.length === 0 ? (
         <View className="flex-1 justify-center items-center p-8">
           <MaterialIcons name="inventory-2" size={64} color="#D1D5DB" />

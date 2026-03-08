@@ -2,7 +2,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     ScrollView,
     Text,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import Loading from '../../components/Loading';
 import { apiFetch } from '../../lib/api';
 import { User } from '../../lib/types';
 import { useAuthStore } from '../../store/authStore';
@@ -56,22 +56,24 @@ export default function AccountScreen() {
   };
 
   if (loading) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#059669" />
-      </View>
-    );
+    return <Loading />;
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-gray-50"
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingTop: insets.top }}>
-
+    <View className="flex-1 bg-gray-50">
+      {/* Fixed status bar background - prevents content from mixing with status bar when scrolled */}
+      <View
+        style={{ height: insets.top, backgroundColor: '#F9FAFB' }}
+        className="absolute top-0 left-0 right-0 z-10"
+      />
+      <ScrollView
+        className="flex-1"
+        style={{ backgroundColor: 'transparent' }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 24 }}
+      >
       {/* Profile Section */}
-
-      <Animated.View entering={FadeInDown.duration(400)} className="bg-gray-50 p-8 items-center mb-4">
+      <Animated.View entering={FadeInDown.duration(400)} className="p-8 items-center mb-4">
 
         <View className="relative mb-4 ">
           <View className="w-24 h-24 rounded-full bg-green-100 justify-center items-center">
@@ -193,5 +195,6 @@ export default function AccountScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </View>
   );
 }

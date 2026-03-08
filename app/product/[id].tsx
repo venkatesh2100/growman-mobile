@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Loading from '../../components/Loading';
 import AddToCart from '../../components/product/AddToCart';
 import ImageGallery from '../../components/product/ImageGallery';
 import ProductTabs from '../../components/product/ProductTabs';
@@ -84,11 +85,7 @@ export default function ProductDetailScreen() {
   };
 
   if (loading || !product) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#059669" />
-      </View>
-    );
+    return <Loading />;
   }
 
   const avgRating =
