@@ -247,7 +247,7 @@ export default function HomeScreen() {
           className="text-[13px] font-semibold text-gray-800 text-center"
           numberOfLines={1}
         >
-          {category.name}
+          {category.name.substring(0,5)}
         </Text>
       </TouchableOpacity>
     </Animated.View>
