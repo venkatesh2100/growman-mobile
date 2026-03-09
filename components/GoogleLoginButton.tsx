@@ -23,6 +23,8 @@ export default function GoogleLoginButton() {
       });
     }
   }, []);
+  // In GoogleLoginButton.tsx or wherever you configure
+// console.log('Using webClientId:', GOOGLE_CLIENT_ID)
 
   const handleGoogleLogin = async () => {
     if (!GOOGLE_CLIENT_ID) {
@@ -38,13 +40,18 @@ export default function GoogleLoginButton() {
 
       // Sign in
       const userInfo = await GoogleSignin.signIn();
-
+      // console.log('userInfo', userInfo);
       if (userInfo?.data?.idToken) {
         // Send token to backend for verification
         const res = await apiFetch('/auth/google', {
           method: 'POST',
           body: JSON.stringify({ token: userInfo.data.idToken }),
         });
+
+        // const res = await apiFetch("/auth/google", {
+        //   method: "POST",
+        //   body: JSON.stringify({ token: tokenResponse.access_token }),
+        // });
 
         if (!res.ok) {
           // User doesn't exist, redirect to signup
@@ -67,13 +74,13 @@ export default function GoogleLoginButton() {
       console.error('Google login error:', error);
 
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log('User cancelled Google sign in');
+        // console.log('User cancelled Google sign in');
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log('Google sign in already in progress');
+        // console.log('Google sign in already in progress');
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log('Play services not available');
+        // console.log('Play services not available');
       } else {
-        console.log('Google sign in error:', error.message);
+        // console.log('Google sign in error:', error.message);
       }
     } finally {
       setLoading(false);

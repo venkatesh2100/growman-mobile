@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import React ,{ useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -13,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
+import { showAlert } from '../../components/Alert';
 import { apiFetch } from '../../lib/api';
 
 type Step = 'email' | 'otp' | 'reset';
@@ -26,10 +26,6 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const showAlert = (title: string, message: string) => {
-    Alert.alert(title, message);
-  };
 
   const handleSendOTP = async () => {
     if (!email) {

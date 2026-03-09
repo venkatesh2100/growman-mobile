@@ -9,7 +9,6 @@ import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   ScrollView,
   Text,
@@ -24,6 +23,7 @@ import ProductCard from "../../components/ProductCard";
 import { toast } from "../../components/Toast";
 import { apiFetch, identifyPlant } from "../../lib/api";
 import { Product } from "../../lib/types";
+import { showAlert, showConfirm } from "../../components/Alert";
 import { useSearchStore } from "../../store/searchStore";
 
 const { width } = Dimensions.get("window");
@@ -89,14 +89,13 @@ export default function HomeScreen() {
   const handleScanPlant = useCallback(async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
+      showAlert(
         "Camera permission",
-        "Please allow camera access to scan plants.",
-        [{ text: "OK" }]
+        "Please allow camera access to scan plants."
       );
       return;
     }
-    Alert.alert("Scan plant", "Choose image source", [
+    showConfirm("Scan plant", "Choose image source", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Camera",
@@ -164,7 +163,7 @@ export default function HomeScreen() {
     // Request microphone first - this triggers the system permission dialog
     const micResult = await ExpoSpeechRecognitionModule.requestMicrophonePermissionsAsync();
     if (!micResult.granted) {
-      Alert.alert(
+      showConfirm(
         "Microphone access required",
         "Voice search needs microphone access. Please enable it in Settings.",
         [
@@ -177,7 +176,7 @@ export default function HomeScreen() {
     // On iOS, also request speech recognition permission
     const speechResult = await ExpoSpeechRecognitionModule.requestSpeechRecognizerPermissionsAsync?.();
     if (speechResult && !speechResult.granted) {
-      Alert.alert(
+      showConfirm(
         "Speech recognition required",
         "Voice search needs speech recognition. Please enable it in Settings.",
         [

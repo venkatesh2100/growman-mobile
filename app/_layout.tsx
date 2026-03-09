@@ -2,7 +2,8 @@ import { Slot, Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import  { ToastContainer } from '../components/Toast';
+import { AlertContainer } from '../components/Alert';
+import { ToastContainer } from '../components/Toast';
 import Chatbot from '@/components/Chatbot';
 import './global.css';
 
@@ -23,6 +24,7 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }} />
         )}
         <ToastContainer />
+        <AlertContainer />
         <Chatbot />
       </SafeAreaProvider>
     </GestureHandlerRootView>

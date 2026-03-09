@@ -59,11 +59,11 @@ export default function GoogleSignupButton() {
       console.error('Google signup error:', error);
 
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log('User cancelled Google sign in');
+        // console.log('User cancelled Google sign in');
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log('Google sign in already in progress');
+        // console.log('Google sign in already in progress');
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log('Play services not available');
+        // console.log('Play services not available');
       } else {
         console.log('Google sign in error:', error.message);
       }

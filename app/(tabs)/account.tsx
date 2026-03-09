@@ -2,7 +2,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
     ScrollView,
     Text,
     TouchableOpacity,
@@ -11,8 +10,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Loading from '../../components/Loading';
+import { toast } from '../../components/Toast';
 import { apiFetch } from '../../lib/api';
 import { User } from '../../lib/types';
+import { showConfirm } from '../../components/Alert';
 import { useAuthStore } from '../../store/authStore';
 
 export default function AccountScreen() {
@@ -42,7 +43,7 @@ export default function AccountScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    showConfirm('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',
@@ -100,13 +101,17 @@ export default function AccountScreen() {
             </View>
             <Text className="text-[13px] font-semibold text-gray-900">Orders</Text>
           </TouchableOpacity>
-          <TouchableOpacity className="flex-1 bg-white rounded-2xl p-4 items-center shadow-md">
+          <TouchableOpacity
+            className="flex-1 bg-white rounded-2xl p-4 items-center shadow-md"
+            onPress={() => router.push('/wishlist')}>
             <View className="w-14 h-14 rounded-full bg-blue-100 justify-center items-center mb-2">
               <MaterialIcons name="favorite" size={24} color="#3B82F6" />
             </View>
             <Text className="text-[13px] font-semibold text-gray-900">Wishlist</Text>
           </TouchableOpacity>
-          <TouchableOpacity className="flex-1 bg-white rounded-2xl p-4 items-center shadow-md">
+          <TouchableOpacity
+            className="flex-1 bg-white rounded-2xl p-4 items-center shadow-md"
+            onPress={() => toast('Coming soon!', 'info')}>
             <View className="w-14 h-14 rounded-full bg-yellow-100 justify-center items-center mb-2">
               <MaterialIcons name="card-giftcard" size={24} color="#F59E0B" />
             </View>
@@ -129,7 +134,9 @@ export default function AccountScreen() {
             <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row justify-between items-center p-4 border-b border-gray-100">
+          <TouchableOpacity
+            className="flex-row justify-between items-center p-4 border-b border-gray-100"
+            onPress={() => router.push('/saved-addresses')}>
             <View className="flex-row items-center gap-4 flex-1">
               <MaterialIcons name="location-on" size={24} color="#059669" />
               <Text className="text-base text-gray-900 font-medium">Saved Addresses</Text>
@@ -137,7 +144,9 @@ export default function AccountScreen() {
             <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row justify-between items-center p-4 border-b border-gray-100">
+          <TouchableOpacity
+            className="flex-row justify-between items-center p-4 border-b border-gray-100"
+            onPress={() => router.push('/payment-methods')}>
             <View className="flex-row items-center gap-4 flex-1">
               <MaterialIcons name="payment" size={24} color="#059669" />
               <Text className="text-base text-gray-900 font-medium">Payment Methods</Text>
@@ -145,7 +154,9 @@ export default function AccountScreen() {
             <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row justify-between items-center p-4">
+          <TouchableOpacity
+            className="flex-row justify-between items-center p-4"
+            onPress={() => router.push('/notifications')}>
             <View className="flex-row items-center gap-4 flex-1">
               <MaterialIcons name="notifications" size={24} color="#059669" />
               <Text className="text-base text-gray-900 font-medium">Notifications</Text>
@@ -159,7 +170,9 @@ export default function AccountScreen() {
       <View className="mb-4 px-4">
         <Text className="text-lg font-bold text-gray-900 mb-3">Support</Text>
         <View className="bg-white rounded-2xl overflow-hidden">
-          <TouchableOpacity className="flex-row justify-between items-center p-4 border-b border-gray-100">
+          <TouchableOpacity
+            className="flex-row justify-between items-center p-4 border-b border-gray-100"
+            onPress={() => router.push('/help-center')}>
             <View className="flex-row items-center gap-4 flex-1">
               <MaterialIcons name="help" size={24} color="#059669" />
               <Text className="text-base text-gray-900 font-medium">Help Center</Text>
@@ -167,7 +180,9 @@ export default function AccountScreen() {
             <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row justify-between items-center p-4 border-b border-gray-100">
+          <TouchableOpacity
+            className="flex-row justify-between items-center p-4 border-b border-gray-100"
+            onPress={() => router.push('/privacy-policy')}>
             <View className="flex-row items-center gap-4 flex-1">
               <MaterialIcons name="privacy-tip" size={24} color="#059669" />
               <Text className="text-base text-gray-900 font-medium">Privacy Policy</Text>
@@ -175,7 +190,9 @@ export default function AccountScreen() {
             <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row justify-between items-center p-4">
+          <TouchableOpacity
+            className="flex-row justify-between items-center p-4"
+            onPress={() => router.push('/terms')}>
             <View className="flex-row items-center gap-4 flex-1">
               <MaterialIcons name="description" size={24} color="#059669" />
               <Text className="text-base text-gray-900 font-medium">Terms & Conditions</Text>

@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSegments } from 'expo-router';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Keyboard,
   Modal,
@@ -18,6 +17,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { apiFetch, identifyPlant } from '../lib/api';
+import { showAlert, showConfirm } from './Alert';
 import { toast } from './Toast';
 import MarkdownRenderer from './product/MarkdownRenderer';
 
@@ -143,15 +143,14 @@ export default function Chatbot() {
   const handleScanPlant = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
+      showAlert(
         'Camera permission',
-        'Please allow camera access to scan plants.',
-        [{ text: 'OK' }]
+        'Please allow camera access to scan plants.'
       );
       return;
     }
 
-    Alert.alert('Scan plant', 'Choose image source', [
+    showConfirm('Scan plant', 'Choose image source', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Camera',

@@ -15,8 +15,10 @@ import ImageGallery from '../../components/product/ImageGallery';
 import ProductTabs from '../../components/product/ProductTabs';
 import RelatedProducts from '../../components/product/RelatedProducts';
 import SizeSelector from '../../components/product/SizeSelector';
+import { toast } from '../../components/Toast';
 import { apiFetch } from '../../lib/api';
 import { Product, ProductSize } from '../../lib/types';
+import { useAuthStore } from '../../store/authStore';
 
 export default function ProductDetailScreen() {
   const { id, size } = useLocalSearchParams<{ id: string; size?: string }>();
@@ -26,6 +28,9 @@ export default function ProductDetailScreen() {
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inWishlist, setInWishlist] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const { token } = useAuthStore();
 
   useEffect(() => {
     loadProduct();
@@ -50,6 +55,49 @@ export default function ProductDetailScreen() {
       fetchRelatedProducts();
     }
   }, [product?.slug]);
+
+  useEffect(() => {
+    if (token && product?.id) {
+      apiFetch('/wishlist')
+        .then((res) => (res.ok ? res.json() : []))
+        .then((list: Product[]) => {
+          const ids = Array.isArray(list) ? list.map((p) => p.id) : [];
+          setInWishlist(ids.includes(product.id));
+        })
+        .catch(() => {});
+    }
+  }, [token, product?.id]);
+
+  const toggleWishlist = async () => {
+    if (!product) return;
+    if (!token) {
+      toast('Login to save to wishlist', 'info');
+      return;
+    }
+    setWishlistLoading(true);
+    try {
+      if (inWishlist) {
+        const res = await apiFetch(`/wishlist/${product.id}`, { method: 'DELETE' });
+        if (res.ok) {
+          setInWishlist(false);
+          toast('Removed from wishlist', 'success');
+        }
+      } else {
+        const res = await apiFetch('/wishlist', {
+          method: 'POST',
+          body: JSON.stringify({ productId: product.id }),
+        });
+        if (res.ok) {
+          setInWishlist(true);
+          toast('Added to wishlist', 'success');
+        }
+      }
+    } catch (error) {
+      toast('Something went wrong', 'error');
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
 
   const loadProduct = async () => {
     try {
@@ -137,8 +185,25 @@ export default function ProductDetailScreen() {
 
         {/* Product Details */}
         <View className="bg-white rounded-xl p-4 mb-4 shadow-md">
-          {/* Title */}
-          <Text className="text-2xl font-bold text-gray-900 mb-2">{product.name}</Text>
+          {/* Title + Wishlist */}
+          <View className="flex-row items-start justify-between gap-2 mb-2">
+            <Text className="flex-1 text-2xl font-bold text-gray-900">{product.name}</Text>
+            <TouchableOpacity
+              onPress={toggleWishlist}
+              disabled={wishlistLoading}
+              className="p-2 -mr-2 rounded-full"
+            >
+              {wishlistLoading ? (
+                <ActivityIndicator size="small" color="#EF4444" />
+              ) : (
+                <MaterialIcons
+                  name={inWishlist ? 'favorite' : 'favorite-border'}
+                  size={28}
+                  color={inWishlist ? '#EF4444' : '#6B7280'}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
 
           {/* Ratings + Stock */}
           <View className="flex-row items-center gap-2 mb-3">

@@ -2,7 +2,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-    Alert,
     Image,
     ScrollView,
     Text,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCartStore } from '../../store/cartStore';
+import { showAlert } from '../../components/Alert';
 import { useSearchStore } from '../../store/searchStore';
 
 export default function CartScreen() {
@@ -21,7 +21,7 @@ export default function CartScreen() {
 
   const handleCheckout = () => {
     if (items.length === 0) {
-      Alert.alert('Cart Empty', 'Please add items to cart');
+      showAlert('Cart Empty', 'Please add items to cart');
       return;
     }
     router.push('/checkout');

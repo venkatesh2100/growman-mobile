@@ -67,7 +67,7 @@ export default function AddToCart({ product, selectedSize }: AddToCartProps) {
           <View className="flex-row items-center border-2 border-gray-200 rounded-lg overflow-hidden">
             <TouchableOpacity
               onPress={() => setQuantity((q) => Math.max(1, q - 1))}
-              className="px-2 py-2 bg-gray-100 active:bg-gray-200"
+              className="px-4 py-2 bg-gray-100 active:bg-gray-200"
               disabled={quantity <= 1}>
               <Text className="text-gray-600 text-lg">-</Text>
             </TouchableOpacity>
@@ -76,7 +76,7 @@ export default function AddToCart({ product, selectedSize }: AddToCartProps) {
             </Text>
             <TouchableOpacity
               onPress={() => setQuantity((q) => Math.min(selectedSize.stock, q + 1))}
-              className="px-2 py-2 bg-gray-100 active:bg-gray-200"
+              className="px-4 py-2 bg-gray-100 active:bg-gray-200"
               disabled={quantity >= selectedSize.stock}>
               <Text className="text-gray-600 text-lg">+</Text>
             </TouchableOpacity>
@@ -84,7 +84,7 @@ export default function AddToCart({ product, selectedSize }: AddToCartProps) {
           <Text className="text-sm text-gray-500">
             {selectedSize.stock} available
           </Text>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() => setIsWishlisted(!isWishlisted)}
             className={`p-2 border-2 rounded-full ${
               isWishlisted
@@ -96,7 +96,7 @@ export default function AddToCart({ product, selectedSize }: AddToCartProps) {
               size={22}
               color={isWishlisted ? '#EF4444' : '#6B7280'}
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
     
         </View>
 

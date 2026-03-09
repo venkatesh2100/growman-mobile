@@ -1,9 +1,8 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,7 +11,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { showAlert } from '../../components/Alert';
 import GoogleLoginButton from '../../components/GoogleLoginButton';
 import { GOOGLE_CLIENT_ID } from '../../config/env';
 import { apiFetch } from '../../lib/api';
@@ -20,6 +21,8 @@ import { useAuthStore } from '../../store/authStore';
 
 export default function LoginScreen() {
   const { setToken } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const passwordInputRef = useRef<TextInput>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,7 +32,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (!email || !password) {
       setError('Please fill in all fields');
-      Alert.alert('Error', 'Please fill in all fields');
+      showAlert('Error', 'Please fill in all fields');
       return;
     }
 
@@ -68,19 +71,19 @@ export default function LoginScreen() {
         }
 
         setError(errorMessage);
-        Alert.alert('Login Failed', errorMessage);
+        showAlert('Login Failed', errorMessage);
         return;
       }
 
       const data = await response.json();
       setToken(data.token);
       setSuccess(true);
-      Alert.alert('Success', 'Login successful! Welcome back!');
+      showAlert('Success', 'Login successful! Welcome back!');
       router.replace('/(tabs)/home');
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to login. Please try again.';
       setError(errorMsg);
-      Alert.alert('Error', errorMsg);
+      showAlert('Error', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -88,13 +91,16 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-gray-50"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        className="flex-1 bg-gray-50"
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
-        <View className="flex-1 justify-center p-6">
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets={true}>
+        <View className="flex-1 justify-center p-6 mt-10">
           <Animated.View entering={FadeInDown.delay(100).duration(400)} className="items-center mb-6">
             <View className="w-16 h-16 rounded-full bg-green-600 items-center justify-center">
               <MaterialIcons name="login" size={32} color="#FFFFFF" />
@@ -126,9 +132,9 @@ export default function LoginScreen() {
               </Animated.View>
             )}
 
-            <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-              <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4">
-                <MaterialIcons name="email" size={20} color="#9CA3AF" className="mr-3" />
+            <Animated.View entering={FadeInDown.duration(300)}>
+              <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 mb-4">
+                <MaterialIcons name="email" size={20} color="#9CA3AF" style={{ marginRight: 12 }} />
                 <TextInput
                   className="flex-1 py-4 text-base text-gray-900"
                   placeholder="Email or phone number"
@@ -140,14 +146,15 @@ export default function LoginScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   placeholderTextColor="#9CA3AF"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
                 />
               </View>
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-              <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4">
-                <MaterialIcons name="lock" size={20} color="#9CA3AF" className="mr-3" />
+              <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 mb-4">
+                <MaterialIcons name="lock" size={20} color="#9CA3AF" style={{ marginRight: 12 }} />
                 <TextInput
+                  ref={passwordInputRef}
                   className="flex-1 py-4 text-base text-gray-900"
                   placeholder="Enter your password"
                   value={password}
@@ -157,11 +164,9 @@ export default function LoginScreen() {
                   }}
                   secureTextEntry
                   placeholderTextColor="#9CA3AF"
+                  returnKeyType="done"
                 />
               </View>
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.delay(500).duration(400)}>
               <TouchableOpacity
                 className={`flex-row items-center justify-center bg-green-600 p-4 rounded-xl gap-2 min-h-[52px] ${(loading || success) ? 'opacity-60' : ''}`}
                 onPress={handleLogin}

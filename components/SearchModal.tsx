@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -15,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { identifyPlant } from '../lib/api';
+import { showAlert, showConfirm } from './Alert';
 import { useSearchStore } from '../store/searchStore';
 import { toast } from './Toast';
 
@@ -44,15 +44,14 @@ export default function SearchModal() {
   const handleScanPlant = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
+      showAlert(
         'Camera permission',
-        'Please allow camera access to scan plants.',
-        [{ text: 'OK' }]
+        'Please allow camera access to scan plants.'
       );
       return;
     }
 
-    Alert.alert('Scan plant', 'Choose image source', [
+    showConfirm('Scan plant', 'Choose image source', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Camera',
