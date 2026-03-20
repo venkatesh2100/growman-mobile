@@ -40,7 +40,7 @@ export default function GoogleLoginButton() {
 
       // Sign in
       const userInfo = await GoogleSignin.signIn();
-      // console.log('userInfo', userInfo);
+      console.log('userInfo', userInfo);
       if (userInfo?.data?.idToken) {
         // Send token to backend for verification
         const res = await apiFetch('/auth/google', {

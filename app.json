@@ -1,19 +1,24 @@
 {
   "expo": {
-    "name": "growman",
-    "slug": "growman-mobile",
-    "version": "1.0.0",
+    "name": "Growman",
+    "slug": "Growman",
+    "version": "1.2",
     "orientation": "portrait",
     "icon": "./assets/assets/icon.png",
-    "scheme": "growmanmobile",
+    "scheme": "growman",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.venky2100.growmanmobile",
+      "bundleIdentifier": "com.venky2100.growman",
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["tez", "phonepe", "paytmmp"]
-      }
+        "LSApplicationQueriesSchemes": [
+          "tez",
+          "phonepe",
+          "paytmmp"
+        ]
+      },
+      "buildNumber": "3"
     },
     "android": {
       "softwareKeyboardLayoutMode": "pan",
@@ -25,7 +30,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.venky2100.growmanmobile"
+      "package": "com.venky2100.growman",
+      "versionCode": 3
     },
     "web": {
       "output": "static",

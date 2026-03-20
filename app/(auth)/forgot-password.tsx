@@ -23,6 +23,8 @@ export default function ForgotPasswordScreen() {
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -170,9 +172,9 @@ export default function ForgotPasswordScreen() {
       }
 
       await res.text();
-      showAlert('Success', 'Password reset successfully! Redirecting to login...');
+      showAlert('Success', 'Password reset successfully!.');
       setTimeout(() => {
-        router.replace('/(auth)/login');
+        router.replace('/(tabs)/home');
       }, 1500);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to reset password';
@@ -264,31 +266,51 @@ export default function ForgotPasswordScreen() {
       <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 mb-4">
         <MaterialIcons name="lock" size={20} color="#9CA3AF" className="mr-3" />
         <TextInput
-          className="flex-1 py-4 text-base text-gray-900"
+          className="flex-1 py-4 text-base text-gray-900 pr-2"
           placeholder="Enter new password"
           value={newPassword}
           onChangeText={(text) => {
             setNewPassword(text);
             setError(null);
           }}
-          secureTextEntry
+          secureTextEntry={!showPassword}
           placeholderTextColor="#9CA3AF"
         />
+        <TouchableOpacity
+          onPress={() => setShowPassword((p) => !p)}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <MaterialIcons
+            name={showPassword ? 'visibility-off' : 'visibility'}
+            size={22}
+            color="#9CA3AF"
+          />
+        </TouchableOpacity>
       </View>
 
       <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 mb-4">
         <MaterialIcons name="lock" size={20} color="#9CA3AF" className="mr-3" />
         <TextInput
-          className="flex-1 py-4 text-base text-gray-900"
+          className="flex-1 py-4 text-base text-gray-900 pr-2"
           placeholder="Confirm new password"
           value={confirmPassword}
           onChangeText={(text) => {
             setConfirmPassword(text);
             setError(null);
           }}
-          secureTextEntry
+          secureTextEntry={!showConfirmPassword}
           placeholderTextColor="#9CA3AF"
         />
+        <TouchableOpacity
+          onPress={() => setShowConfirmPassword((p) => !p)}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <MaterialIcons
+            name={showConfirmPassword ? 'visibility-off' : 'visibility'}
+            size={22}
+            color="#9CA3AF"
+          />
+        </TouchableOpacity>
       </View>
 
       <View className="flex-row gap-3">

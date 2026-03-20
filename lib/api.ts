@@ -125,11 +125,12 @@ export async function identifyPlant(imageUri: string): Promise<{
   remainingIdentificationRequests?: number;
 }> {
   const apiUrl = getApiUrl();
-  const url = `${apiUrl}/plants/identify`;
+  // Prefer /images/identify-plant for Cloud Run; backend also has /plants/identify
+  const url = `${apiUrl}/images/identify-plant`;
 
   const authStore = useAuthStore.getState();
   const token = authStore.token;
-
+  // console.log('token', token);
   const formData = new FormData();
   formData.append('image', {
     uri: imageUri,
@@ -147,7 +148,7 @@ export async function identifyPlant(imageUri: string): Promise<{
     headers,
     body: formData,
   });
-
+//  console.log('response', response);
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     throw new Error((err as { error?: string })?.error || 'Plant identification failed');

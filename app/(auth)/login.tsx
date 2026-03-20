@@ -25,14 +25,16 @@ export default function LoginScreen() {
   const passwordInputRef = useRef<TextInput>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError('Please fill in all fields');
-      showAlert('Error', 'Please fill in all fields');
+      const msg = "Let's get you signed in! Please enter your email and password.";
+      setError(msg);
+      showAlert('Almost there', msg);
       return;
     }
 
@@ -46,32 +48,33 @@ export default function LoginScreen() {
       });
 
       if (!response.ok) {
-        let errorMessage = 'Login failed';
+        let errorMessage = "We couldn't sign you in right now. Please try again.";
         try {
           const contentType = response.headers.get('content-type');
           if (contentType && contentType.includes('application/json')) {
             const errorData = await response.json();
-            const apiError = errorData.error || errorData.message;
+            const apiError = (errorData.error || errorData.message || '').toLowerCase();
 
-            if (apiError) {
-              if (apiError.includes('invalid credentials') || apiError.includes('unauthorized')) {
-                errorMessage = 'Invalid email/phone or password. Please check and try again.';
-              } else if (apiError.includes('not found') || apiError.includes('does not exist')) {
-                errorMessage = 'No account found with this email/phone. Please sign up first.';
-              } else {
-                errorMessage = apiError;
-              }
+            if (response.status === 429) {
+              errorMessage = "Too many attempts. Please wait a moment and try again.";
+            } else if (apiError.includes('account not found') || apiError.includes('not found') || apiError.includes('does not exist')) {
+              errorMessage = "We don't have an account with that email yet. Create one to get started!";
+            } else if (apiError.includes('invalid') || apiError.includes('credential') || apiError.includes('unauthorized')) {
+              errorMessage = "That password doesn't look right. Check and try again, or reset it if you've forgotten.";
+            } else if (apiError) {
+              errorMessage = apiError;
             }
-          } else {
-            const text = await response.text();
-            errorMessage = text || `Server returned ${response.status}`;
+          } else if (response.status >= 500) {
+            errorMessage = "Our servers are busy. Please try again in a moment.";
+          } else if (response.status >= 400) {
+            errorMessage = "We couldn't sign you in right now. Please try again.";
           }
         } catch {
-          errorMessage = `Server returned ${response.status}`;
+          errorMessage = "We couldn't sign you in right now. Please try again.";
         }
 
         setError(errorMessage);
-        showAlert('Login Failed', errorMessage);
+        showAlert('Sign in didn’t work', errorMessage);
         return;
       }
 
@@ -81,9 +84,9 @@ export default function LoginScreen() {
       showAlert('Success', 'Login successful! Welcome back!');
       router.replace('/(tabs)/home');
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to login. Please try again.';
+      const errorMsg = "Check your connection and try again. We couldn't reach our servers.";
       setError(errorMsg);
-      showAlert('Error', errorMsg);
+      showAlert('Connection issue', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -155,17 +158,27 @@ export default function LoginScreen() {
                 <MaterialIcons name="lock" size={20} color="#9CA3AF" style={{ marginRight: 12 }} />
                 <TextInput
                   ref={passwordInputRef}
-                  className="flex-1 py-4 text-base text-gray-900"
+                  className="flex-1 py-4 text-base text-gray-900 pr-2"
                   placeholder="Enter your password"
                   value={password}
                   onChangeText={(text) => {
                     setPassword(text);
                     setError(null);
                   }}
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   placeholderTextColor="#9CA3AF"
                   returnKeyType="done"
                 />
+                <TouchableOpacity
+                  onPress={() => setShowPassword((p) => !p)}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <MaterialIcons
+                    name={showPassword ? 'visibility-off' : 'visibility'}
+                    size={22}
+                    color="#9CA3AF"
+                  />
+                </TouchableOpacity>
               </View>
               <TouchableOpacity
                 className={`flex-row items-center justify-center bg-green-600 p-4 rounded-xl gap-2 min-h-[52px] ${(loading || success) ? 'opacity-60' : ''}`}

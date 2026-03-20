@@ -4,7 +4,7 @@ const DEFAULT_API_URL = Platform.OS === 'android'
   ? 'http://192.168.1.8:8080/api/v1'  // Android emulator
   : 'http://localhost:8080/api/v1'; // iOS simulator / web
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_URL;
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_URL;
 
 export const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 

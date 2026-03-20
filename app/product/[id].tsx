@@ -57,15 +57,24 @@ export default function ProductDetailScreen() {
   }, [product?.slug]);
 
   useEffect(() => {
-    if (token && product?.id) {
-      apiFetch('/wishlist')
-        .then((res) => (res.ok ? res.json() : []))
-        .then((list: Product[]) => {
-          const ids = Array.isArray(list) ? list.map((p) => p.id) : [];
-          setInWishlist(ids.includes(product.id));
-        })
-        .catch(() => {});
+    if (!token || !product?.id) {
+      setInWishlist(false);
+      return;
     }
+    const productId = product.id;
+    let cancelled = false;
+    apiFetch('/wishlist')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((list: Product[] | unknown) => {
+        if (cancelled) return;
+        const arr = Array.isArray(list) ? list : [];
+        const ids = arr.map((p: Product) => p.id ?? (p as { ID?: number }).ID).filter(Boolean);
+        setInWishlist(ids.includes(productId));
+      })
+      .catch(() => {
+        if (!cancelled) setInWishlist(false);
+      });
+    return () => { cancelled = true; };
   }, [token, product?.id]);
 
   const toggleWishlist = async () => {
