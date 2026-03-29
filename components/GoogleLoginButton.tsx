@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, View } from 'react-native';
 import {
   GoogleSignin,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import { apiFetch } from '../lib/api';
-import { useAuthStore } from '../store/authStore';
-import { GOOGLE_CLIENT_ID } from '../config/env';
 import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { GOOGLE_CLIENT_ID } from '../config/env';
+import { apiFetch } from '../lib/api';
+import { clearGoogleSessionForAccountPicker, signInForIdToken } from '../lib/googleSignInHelpers';
+import { useAuthStore } from '../store/authStore';
 
 export default function GoogleLoginButton() {
   const router = useRouter();
@@ -15,7 +16,6 @@ export default function GoogleLoginButton() {
   const setToken = useAuthStore((state) => state.setToken);
 
   useEffect(() => {
-    // Configure Google Sign In
     if (GOOGLE_CLIENT_ID) {
       GoogleSignin.configure({
         webClientId: GOOGLE_CLIENT_ID,
@@ -23,8 +23,6 @@ export default function GoogleLoginButton() {
       });
     }
   }, []);
-  // In GoogleLoginButton.tsx or wherever you configure
-// console.log('Using webClientId:', GOOGLE_CLIENT_ID)
 
   const handleGoogleLogin = async () => {
     if (!GOOGLE_CLIENT_ID) {
@@ -35,53 +33,48 @@ export default function GoogleLoginButton() {
     try {
       setLoading(true);
 
-      // Check if Google Play Services are available
-      await GoogleSignin.hasPlayServices();
-
-      // Sign in
-      const userInfo = await GoogleSignin.signIn();
-      console.log('userInfo', userInfo);
-      if (userInfo?.data?.idToken) {
-        // Send token to backend for verification
-        const res = await apiFetch('/auth/google', {
-          method: 'POST',
-          body: JSON.stringify({ token: userInfo.data.idToken }),
-        });
-
-        // const res = await apiFetch("/auth/google", {
-        //   method: "POST",
-        //   body: JSON.stringify({ token: tokenResponse.access_token }),
-        // });
-
-        if (!res.ok) {
-          // User doesn't exist, redirect to signup
-          const errorData = await res.json().catch(() => ({}));
-          if (res.status === 404 || errorData.error?.includes('not exist')) {
-            // Navigate to signup screen
-            router.push('/signup');
-            return;
-          }
-          throw new Error('Google login failed');
-        }
-
-        const data = await res.json();
-        setToken(data.token);
-        // Navigation will automatically switch to Main stack
-        router.replace('/(tabs)/home');
+      if (Platform.OS === 'android') {
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       }
-    } catch (error: any) {
-      console.log(error);
+
+      await clearGoogleSessionForAccountPicker();
+
+      const signInResult = await signInForIdToken();
+      if (signInResult.kind === 'cancelled') {
+        return;
+      }
+      if (signInResult.kind === 'failed') {
+        router.replace('/(auth)');
+        return;
+      }
+      const { idToken } = signInResult;
+
+      const res = await apiFetch('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ token: idToken }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        const message =
+          typeof (errorData as { error?: string }).error === 'string'
+            ? (errorData as { error: string }).error
+            : 'Google sign-in failed';
+        console.error('Google backend error:', message);
+        router.replace('/(auth)');
+        return;
+      }
+
+      const data = await res.json();
+      setToken(data.token);
+      router.replace('/(tabs)/home');
+    } catch (error: unknown) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code: unknown }).code) : '';
+      if (code === String(statusCodes.SIGN_IN_CANCELLED)) {
+        return;
+      }
       console.error('Google login error:', error);
-
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        // console.log('User cancelled Google sign in');
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        // console.log('Google sign in already in progress');
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        // console.log('Play services not available');
-      } else {
-        // console.log('Google sign in error:', error.message);
-      }
+      router.replace('/(auth)');
     } finally {
       setLoading(false);
     }

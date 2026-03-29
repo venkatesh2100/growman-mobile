@@ -1,6 +1,14 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import React, { useCallback, useState } from 'react';
-import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  FlatList,
+  Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface ImageGalleryProps {
   images?: string[];
@@ -8,82 +16,123 @@ interface ImageGalleryProps {
 
 export default function ImageGallery({ images }: ImageGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [slideWidth, setSlideWidth] = useState(0);
+  const listRef = useRef<FlatList<string>>(null);
 
   const safeImages = images ?? [];
   const hasImages = safeImages.length > 0;
-  const mainImage = hasImages ? safeImages[currentIndex] : undefined;
+  const multi = safeImages.length > 1;
 
-  const handleThumbnailClick = useCallback((index: number) => {
-    if (!hasImages) return;
-    setCurrentIndex(index);
-  }, [hasImages]);
+  const handleThumbnailClick = useCallback(
+    (index: number) => {
+      if (!hasImages || slideWidth <= 0) return;
+      setCurrentIndex(index);
+      listRef.current?.scrollToOffset({ offset: index * slideWidth, animated: true });
+    },
+    [hasImages, slideWidth]
+  );
 
-  const handlePrev = useCallback(() => {
-    if (!hasImages) return;
-    setCurrentIndex((prev) => (prev - 1 + safeImages.length) % safeImages.length);
-  }, [hasImages, safeImages.length]);
+  const onMomentumScrollEnd = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (slideWidth <= 0 || safeImages.length === 0) return;
+      const x = e.nativeEvent.contentOffset.x;
+      const i = Math.round(x / slideWidth);
+      setCurrentIndex(Math.max(0, Math.min(safeImages.length - 1, i)));
+    },
+    [slideWidth, safeImages.length]
+  );
 
-  const handleNext = useCallback(() => {
-    if (!hasImages) return;
-    setCurrentIndex((prev) => (prev + 1) % safeImages.length);
-  }, [hasImages, safeImages.length]);
+  const onHeroLayout = useCallback((w: number) => {
+    if (w > 0) setSlideWidth(w);
+  }, []);
+
+  const imagesKey = safeImages.join('|');
+  useEffect(() => {
+    setCurrentIndex(0);
+    if (slideWidth > 0) {
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }
+  }, [imagesKey]);
 
   return (
-    <View className="relative">
-      {/* Main Image */}
-      <View className="relative aspect-square overflow-hidden rounded-lg mb-4">
-        {mainImage ? (
-          <Image
-            source={{ uri: mainImage }}
-            className="w-full h-full"
-            resizeMode="cover"
-          />
-        ) : (
-          <View className="w-full h-full bg-gray-100 rounded-lg items-center justify-center">
+    <View>
+      <View
+        className="relative mb-3 overflow-hidden rounded-2xl bg-gray-100"
+        onLayout={(e) => onHeroLayout(e.nativeEvent.layout.width)}>
+        {!hasImages ? (
+          <View className="aspect-square w-full items-center justify-center">
             <MaterialIcons name="image" size={48} color="#9CA3AF" />
+          </View>
+        ) : multi && slideWidth > 0 ? (
+          <>
+            <FlatList
+              ref={listRef}
+              data={safeImages}
+              horizontal
+              pagingEnabled
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(_, i) => `gallery-${i}`}
+              onMomentumScrollEnd={onMomentumScrollEnd}
+              decelerationRate="fast"
+              snapToInterval={slideWidth}
+              snapToAlignment="start"
+              disableIntervalMomentum
+              getItemLayout={(_, index) => ({
+                length: slideWidth,
+                offset: slideWidth * index,
+                index,
+              })}
+              style={{ height: slideWidth }}
+              renderItem={({ item }) => (
+                <View style={{ width: slideWidth, height: slideWidth }}>
+                  <Image source={{ uri: item }} className="h-full w-full" resizeMode="cover" />
+                </View>
+              )}
+            />
+            <View
+              pointerEvents="none"
+              className="absolute bottom-3 left-0 right-0 flex-row justify-center gap-1.5 px-4">
+              {safeImages.map((_, i) => (
+                <View
+                  key={i}
+                  className="h-1.5 rounded-full"
+                  style={{
+                    width: i === currentIndex ? 20 : 6,
+                    backgroundColor: i === currentIndex ? '#FFFFFF' : 'rgba(255,255,255,0.45)',
+                  }}
+                />
+              ))}
+            </View>
+          </>
+        ) : (
+          <View className="aspect-square w-full">
+            <Image
+              source={{ uri: safeImages[0] }}
+              className="h-full w-full"
+              resizeMode="cover"
+            />
           </View>
         )}
       </View>
 
-      {/* Thumbnail Navigation */}
-      {safeImages.length > 1 && (
-        <View className="relative">
-          <TouchableOpacity
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 rounded-full shadow-md p-1 z-10 bg-white"
-            onPress={handlePrev}
-            disabled={!hasImages}>
-            <MaterialIcons name="chevron-left" size={20} color="#374151" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-5 rounded-full shadow-md p-1 z-10 bg-white"
-            onPress={handleNext}
-            disabled={!hasImages}>
-            <MaterialIcons name="chevron-right" size={20} color="#374151" />
-          </TouchableOpacity>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="gap-3">
-            <View className="flex-row gap-3 px-8">
-              {safeImages.map((img, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  onPress={() => handleThumbnailClick(idx)}
-                  className={`relative aspect-square w-20 rounded-lg overflow-hidden border-2 ${
-                    currentIndex === idx
-                      ? 'border-green-500'
-                      : 'border-transparent opacity-80'
-                  }`}>
-                  <Image
-                    source={{ uri: img }}
-                    className="w-full h-full"
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
+      {multi && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 10, paddingHorizontal: 2, paddingBottom: 2 }}>
+          {safeImages.map((img, idx) => (
+            <TouchableOpacity
+              key={idx}
+              onPress={() => handleThumbnailClick(idx)}
+              className={`relative aspect-square w-[72px] rounded-xl overflow-hidden border-2 ${
+                currentIndex === idx ? 'border-emerald-600' : 'border-transparent opacity-85'
+              }`}>
+              <Image source={{ uri: img }} className="h-full w-full" resizeMode="cover" />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       )}
     </View>
   );
 }
-

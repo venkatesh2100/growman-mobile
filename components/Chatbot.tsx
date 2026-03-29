@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useSegments } from 'expo-router';
+import { useRouter, useSegments } from 'expo-router';
 import {
   ActivityIndicator,
   Image,
   Keyboard,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -16,7 +17,9 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { apiFetch, identifyPlant } from '../lib/api';
+import { identifyPlant } from '../lib/api';
+import { sendChatMessage, type ChatProductRec } from '../lib/chatApi';
+import { UI } from '../lib/ui';
 import { showAlert, showConfirm } from './Alert';
 import { toast } from './Toast';
 import MarkdownRenderer from './product/MarkdownRenderer';
@@ -25,22 +28,18 @@ interface Message {
   id: string;
   role: 'user' | 'dootha';
   content: string;
-  products?: {
-    id: number;
-    name: string;
-    price: number;
-    imageUrl?: string;
-  }[];
+  products?: ChatProductRec[];
 }
 
 const DEFAULT_MESSAGE: Message = {
   id: '1',
   role: 'dootha',
   content:
-    "Hi! I'm Dootha, your plant care assistant. I can help you find the perfect plants, answer care questions, and provide expert advice. How can I help you today?",
+    "Hi! I'm **Dootha**, your Growman plant assistant. Ask about care, pests, light, or watering — I can suggest products from our store too.",
 };
 
 export default function Chatbot() {
+  const router = useRouter();
   const segments = useSegments();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -91,38 +90,19 @@ export default function Chatbot() {
       content: input.trim(),
     };
 
+    const prior = messages;
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
-      const response = await apiFetch('/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage.content,
-          conversationHistory: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get response');
-      }
-
-      const data = await response.json();
-
-      if (!data || !data.response) {
-        throw new Error('Invalid response from server');
-      }
+      const { response, products } = await sendChatMessage(userMessage.content, prior);
 
       const doothaMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'dootha',
-        content: data.response,
-        products: data.products || [],
+        content: response,
+        products: products.length > 0 ? products : undefined,
       };
 
       setMessages((prev) => [...prev, doothaMessage]);
@@ -132,7 +112,7 @@ export default function Chatbot() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'dootha',
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
+        content: "I'm having trouble connecting. Please try again in a moment.",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -205,6 +185,12 @@ export default function Chatbot() {
     }
   };
 
+  const openProduct = (p: ChatProductRec) => {
+    const id = p.slug || String(p.id);
+    router.push({ pathname: '/product/[id]', params: { id } });
+    setIsOpen(false);
+  };
+
   const renderMessage = (message: Message, index: number) => {
     const isUser = message.role === 'user';
 
@@ -212,34 +198,47 @@ export default function Chatbot() {
       <Animated.View
         key={message.id}
         entering={FadeInDown.delay(index * 50).duration(300)}
-        className={`mb-2 ${isUser ? 'items-end' : 'items-start'}`}>
-        <View className={`max-w-[80%] p-3 rounded-2xl ${isUser ? 'bg-green-600 rounded-br-sm' : 'bg-gray-100 rounded-bl-sm'}`}>
+        className={`mb-3 ${isUser ? 'items-end' : 'items-start'}`}>
+        <View
+          className={`max-w-[85%] p-3 rounded-2xl ${
+            isUser ? 'bg-emerald-700 rounded-br-md' : 'bg-white border border-emerald-100 rounded-bl-md'
+          }`}>
           {isUser ? (
-            <Text className="text-[15px] leading-5 text-white">
-              {message.content}
-            </Text>
+            <Text className="text-[15px] leading-5 text-white">{message.content}</Text>
           ) : (
             <MarkdownRenderer content={message.content} />
           )}
           {message.products && message.products.length > 0 && (
-            <View className="mt-3 gap-2">
-              {message.products.map((product) => (
-                <TouchableOpacity key={product.id} className="flex-row bg-white rounded-xl p-2 gap-2 border border-gray-200">
-                  {product.imageUrl && (
-                    <Image
-                      source={{ uri: product.imageUrl }}
-                      className="w-[60px] h-[60px] rounded-lg bg-gray-100"
-                      resizeMode="cover"
-                    />
-                  )}
-                  <View className="flex-1 justify-center">
-                    <Text className="text-[13px] font-semibold text-gray-900 mb-1" numberOfLines={2}>
-                      {product.name}
-                    </Text>
-                    <Text className="text-sm font-bold text-green-600">₹{product.price}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+            <View className="mt-3">
+              <Text className="text-xs font-semibold text-emerald-800 mb-2">Suggested for you</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                {message.products.map((product) => (
+                  <Pressable
+                    key={product.id}
+                    onPress={() => openProduct(product)}
+                    className="w-[124px] rounded-2xl overflow-hidden bg-emerald-50/80 border border-emerald-100 active:opacity-90">
+                    {product.imageUrl ? (
+                      <Image
+                        source={{ uri: product.imageUrl }}
+                        className="w-full h-[88px] bg-gray-100"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View className="w-full h-[88px] bg-emerald-100 items-center justify-center">
+                        <MaterialIcons name="eco" size={28} color={UI.color.primary} />
+                      </View>
+                    )}
+                    <View className="p-2">
+                      <Text className="text-[11px] font-semibold text-emerald-950" numberOfLines={2}>
+                        {product.name}
+                      </Text>
+                      <Text className="text-xs font-bold mt-0.5" style={{ color: UI.color.primary }}>
+                        ₹{Math.round(product.price)}
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
             </View>
           )}
         </View>
@@ -252,73 +251,86 @@ export default function Chatbot() {
       {/* Chat Button - only visible when bottom tabs are shown */}
       {isTabScreen && (
         <TouchableOpacity
-          className="absolute bottom-16 right-0 w-14 h-14 rounded-full bg-green-600 justify-center items-center shadow-lg z-[1000]"
+          className="absolute bottom-16 right-4 w-14 h-14 rounded-full justify-center items-center shadow-lg z-[1000]"
+          style={{
+            backgroundColor: UI.color.primary,
+            shadowColor: '#14532D',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.25,
+            shadowRadius: 8,
+            elevation: 8,
+          }}
           onPress={() => setIsOpen(true)}
-          activeOpacity={0.8}>
-          <MaterialIcons name="chat" size={24} color="#FFFFFF" />
+          activeOpacity={0.85}>
+          <MaterialIcons name="chat" size={UI.icon.lg} color="#FFFFFF" />
         </TouchableOpacity>
       )}
 
       {/* Chat Modal */}
       <Modal
         visible={isOpen}
-        animationType="slide"
+        animationType="fade"
         transparent
         onRequestClose={() => setIsOpen(false)}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View className="flex-1 bg-black/50">
-            <View className="flex-1 bg-white rounded-t-3xl mt-[100px]">
-              {/* Header */}
-              <View className="flex-row justify-between items-center p-4 border-b border-gray-200 bg-gray-50 rounded-t-3xl">
+          <View className="flex-1 bg-black/45">
+            <View className="flex-1 bg-white rounded-t-3xl mt-[88px] border border-emerald-100 overflow-hidden">
+              <View
+                className="flex-row justify-between items-center px-4 py-3 border-b border-emerald-100"
+                style={{ backgroundColor: UI.color.canvas }}>
                 <View className="flex-row items-center gap-3">
-                  <View className="w-10 h-10 rounded-full bg-green-100 justify-center items-center">
-                    <MaterialIcons name="smart-toy" size={24} color="#059669" />
+                  <View
+                    className="w-10 h-10 rounded-full items-center justify-center"
+                    style={{ backgroundColor: 'rgba(5, 150, 105, 0.12)' }}>
+                    <MaterialIcons name="smart-toy" size={UI.icon.md} color={UI.color.primary} />
                   </View>
                   <View>
-                    <Text className="text-base font-bold text-gray-900">Dootha</Text>
-                    <Text className="text-xs text-gray-500">Plant Care Assistant</Text>
+                    <Text className="text-base font-bold text-emerald-950">Dootha</Text>
+                    <Text className="text-xs text-gray-500">Growman assistant</Text>
                   </View>
                 </View>
-                <TouchableOpacity onPress={() => setIsOpen(false)}>
-                  <MaterialIcons name="close" size={24} color="#111827" />
+                <TouchableOpacity onPress={() => setIsOpen(false)} hitSlop={12} className="p-2 rounded-xl active:bg-emerald-50">
+                  <MaterialIcons name="close" size={UI.icon.lg} color={UI.color.ink} />
                 </TouchableOpacity>
               </View>
 
-              {/* Messages */}
               <ScrollView
                 ref={scrollViewRef}
                 className="flex-1"
-                contentContainerStyle={{ padding: 16, paddingBottom: 24, gap: 12 }}
+                style={{ backgroundColor: UI.color.canvasAlt }}
+                contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
                 showsVerticalScrollIndicator={false}>
                 {messages.map((message, index) => renderMessage(message, index))}
                 {isLoading && (
                   <View className="mb-2 items-start">
-                    <View className="max-w-[80%] p-3 rounded-2xl rounded-bl-sm bg-gray-100">
-                      <ActivityIndicator size="small" color="#059669" />
+                    <View className="max-w-[80%] px-4 py-3 rounded-2xl rounded-bl-md bg-white border border-emerald-100 flex-row items-center gap-2">
+                      <ActivityIndicator size="small" color={UI.color.primary} />
+                      <Text className="text-sm text-gray-600">Thinking…</Text>
                     </View>
                   </View>
                 )}
               </ScrollView>
 
-              {/* Input - moves up with keyboard via bottom padding */}
               <View
-                className="flex-row p-4 pb-6 border-t border-gray-200 bg-white gap-2 items-end"
-                style={{ paddingBottom: 16 + keyboardHeight  }}>
+                className="flex-row px-3 py-3 border-t border-emerald-100 bg-white gap-2 items-end"
+                style={{ paddingBottom: 12 + keyboardHeight }}>
                 <TouchableOpacity
                   onPress={handleScanPlant}
                   disabled={scanning}
-                  className="w-11 h-11 rounded-[22px] bg-green-100 justify-center items-center">
+                  className="w-11 h-11 rounded-2xl items-center justify-center"
+                  style={{ backgroundColor: 'rgba(5, 150, 105, 0.12)' }}>
                   {scanning ? (
-                    <ActivityIndicator size="small" color="#059669" />
+                    <ActivityIndicator size="small" color={UI.color.primary} />
                   ) : (
-                    <MaterialIcons name="photo-camera" size={22} color="#059669" />
+                    <MaterialIcons name="photo-camera" size={UI.icon.md} color={UI.color.primaryDark} />
                   )}
                 </TouchableOpacity>
                 <TextInput
-                  className="flex-1 min-h-[44px] max-h-[100px] bg-gray-100 rounded-[22px] px-4 py-3 text-[15px] text-gray-900"
-                  placeholder="Type your message..."
+                  className="flex-1 min-h-[44px] max-h-[100px] rounded-2xl px-4 py-3 text-[15px] text-gray-900 border border-emerald-100"
+                  style={{ backgroundColor: UI.color.canvasAlt }}
+                  placeholder="Ask about plants or care…"
                   value={input}
                   onChangeText={setInput}
                   placeholderTextColor="#9CA3AF"
@@ -329,10 +341,13 @@ export default function Chatbot() {
                   blurOnSubmit={false}
                 />
                 <TouchableOpacity
-                  className={`w-11 h-11 rounded-[22px] justify-center items-center ${(!input.trim() || isLoading) ? 'bg-gray-300' : 'bg-green-600'}`}
+                  className={`w-11 h-11 rounded-2xl justify-center items-center ${
+                    !input.trim() || isLoading ? 'bg-gray-200' : ''
+                  }`}
+                  style={input.trim() && !isLoading ? { backgroundColor: UI.color.primary } : undefined}
                   onPress={handleSend}
                   disabled={!input.trim() || isLoading}>
-                  <MaterialIcons name="send" size={20} color="#FFFFFF" />
+                  <MaterialIcons name="send" size={20} color={input.trim() && !isLoading ? '#FFFFFF' : '#9CA3AF'} />
                 </TouchableOpacity>
               </View>
             </View>
