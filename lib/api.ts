@@ -5,7 +5,8 @@ import { useAuthStore } from '../store/authStore';
  * Get the base API URL from environment variable or default to local API
  */
 export function getApiUrl(): string {
-  return API_URL;
+  // console.debug(API_URL, "API URL")
+  return API_URL || '';
 }
 
 /**
