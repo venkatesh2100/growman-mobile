@@ -8,8 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Loading from '../../components/Loading';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { UI } from '../../lib/ui';
+import { ProductDetailSkeleton } from '../../components/skeletons/ProductDetailSkeleton';
 import AddToCart from '../../components/product/AddToCart';
 import ImageGallery from '../../components/product/ImageGallery';
 import ProductTabs from '../../components/product/ProductTabs';
@@ -141,8 +142,21 @@ export default function ProductDetailScreen() {
     }
   };
 
-  if (loading || !product) {
-    return <Loading />;
+  if (loading) {
+    return <ProductDetailSkeleton />;
+  }
+  if (!product) {
+    return (
+      <View
+        className="flex-1 bg-gray-50 items-center justify-center px-6"
+        style={{ paddingTop: insets.top }}>
+        <MaterialIcons name="inventory-2" size={48} color="#D1D5DB" />
+        <Text className="text-lg font-semibold text-gray-800 mt-4 text-center">Product not found</Text>
+        <TouchableOpacity className="mt-6 px-6 py-3 rounded-xl bg-emerald-700" onPress={() => router.back()}>
+          <Text className="text-white font-semibold">Go back</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   const avgRating =
@@ -152,11 +166,17 @@ export default function ProductDetailScreen() {
       : 4;
 
   return (
-    <ScrollView
-      className="flex-1 bg-green-50"
-      contentContainerStyle={{ paddingTop: insets.top }}>
+    <SafeAreaView
+      className="flex-1"
+      edges={['top']}
+      style={{ backgroundColor: UI.color.canvas }}>
+      <ScrollView
+        className="flex-1"
+        style={{ backgroundColor: UI.color.canvas }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        showsVerticalScrollIndicator={false}>
       {/* Breadcrumbs */}
-      <View className="px-4 pt-4 pb-2">
+      <View className="px-4 pt-3 pb-2">
         <View className="flex-row items-center gap-1 flex-wrap">
           <TouchableOpacity onPress={() => router.push('/(tabs)/home')}>
             <Text className="text-xs text-gray-500">Home</Text>
@@ -193,7 +213,7 @@ export default function ProductDetailScreen() {
         </View>
 
         {/* Product Details */}
-        <View className="bg-white rounded-xl p-4 mb-4 shadow-md">
+        <View className="bg-white rounded-2xl p-4 mb-4 border border-emerald-100/80 shadow-sm">
           {/* Title + Wishlist */}
           <View className="flex-row items-start justify-between gap-2 mb-2">
             <Text className="flex-1 text-2xl font-bold text-gray-900">{product.name}</Text>
@@ -353,6 +373,7 @@ export default function ProductDetailScreen() {
           <RelatedProducts products={relatedProducts} />
         )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

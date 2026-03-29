@@ -13,7 +13,7 @@ export default function Index() {
       if (isAuthenticated) {
         router.replace('/(tabs)/home');
       } else {
-        router.replace('/(auth)/login');
+        router.replace('/(auth)');
       }
     }, 0);
 

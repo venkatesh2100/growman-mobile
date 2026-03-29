@@ -1,20 +1,16 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import {
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import Loading from '../../components/Loading';
+import { AccountSkeleton } from '../../components/skeletons/AccountSkeleton';
 import { toast } from '../../components/Toast';
 import { apiFetch } from '../../lib/api';
 import { User } from '../../lib/types';
 import { showConfirm } from '../../components/Alert';
 import { useAuthStore } from '../../store/authStore';
+import { UI } from '../../lib/ui';
 
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();
@@ -22,13 +18,7 @@ export default function AccountScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (token) {
-      loadUser();
-    }
-  }, [token]);
-
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     try {
       const response = await apiFetch('/auth/me');
       if (response.ok) {
@@ -40,7 +30,17 @@ export default function AccountScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      setUser(null);
+      return;
+    }
+    setLoading(true);
+    loadUser();
+  }, [token, loadUser]);
 
   const handleLogout = () => {
     showConfirm('Logout', 'Are you sure you want to logout?', [
@@ -50,168 +50,162 @@ export default function AccountScreen() {
         style: 'destructive',
         onPress: () => {
           clearAuth();
-          router.replace('/(auth)/login');
+          router.replace('/(auth)');
         },
       },
     ]);
   };
 
-  if (loading) {
-    return <Loading />;
+  if (token && loading) {
+    return (
+      <View className="flex-1" style={{ backgroundColor: UI.color.canvasAlt, paddingTop: insets.top }}>
+        <AccountSkeleton />
+      </View>
+    );
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* Fixed status bar background - prevents content from mixing with status bar when scrolled */}
+    <View className="flex-1" style={{ backgroundColor: UI.color.canvasAlt }}>
       <View
-        style={{ height: insets.top, backgroundColor: '#F9FAFB' }}
+        style={{ height: insets.top, backgroundColor: UI.color.canvasAlt }}
         className="absolute top-0 left-0 right-0 z-10"
       />
       <ScrollView
         className="flex-1"
-        style={{ backgroundColor: 'transparent' }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 24 }}
-      >
-      {/* Profile Section */}
-      <Animated.View entering={FadeInDown.duration(400)} className="p-8 items-center mb-4">
-
-        <View className="relative mb-4 ">
-          <View className="w-24 h-24 rounded-full bg-green-100 justify-center items-center">
-            <MaterialIcons name="person" size={48} color="#059669" />
+        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 32 }}>
+        <Animated.View entering={FadeInDown.duration(400)} className="px-6 pt-6 items-center mb-6">
+          <View className="relative mb-4">
+            <View
+              className="w-24 h-24 rounded-full justify-center items-center border-2 border-emerald-100"
+              style={{ backgroundColor: 'rgba(5, 150, 105, 0.12)' }}>
+              <MaterialIcons name="person" size={48} color={UI.color.primary} />
+            </View>
           </View>
-          <View className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-green-600 justify-center items-center border-[3px] border-white">
-            <MaterialIcons name="edit" size={16} color="#FFFFFF" />
-          </View>
-        </View>
-        <Text className="text-2xl font-bold text-gray-900 mb-1">{user?.name || 'User'}</Text>
-        <Text className="text-base text-gray-500 mb-1">{user?.email || ''}</Text>
-        {user?.phone && <Text className="text-sm text-gray-400">{user.phone}</Text>}
-      </Animated.View>
+          <Text className="text-2xl font-bold text-gray-900 mb-1">{user?.name ?? 'Guest'}</Text>
+          {user?.email ? <Text className="text-base text-gray-600 mb-1">{user.email}</Text> : null}
+          {user?.phone ? <Text className="text-sm text-gray-500">{user.phone}</Text> : null}
+          {!token && (
+            <TouchableOpacity
+              className="mt-4 px-8 py-3 rounded-2xl bg-emerald-700 active:opacity-90"
+              onPress={() => router.push('/(auth)/login')}>
+              <Text className="text-base font-semibold text-white">Sign in</Text>
+            </TouchableOpacity>
+          )}
+        </Animated.View>
 
-      {/* Quick Actions */}
-      <View className="mb-4 px-4">
-        <Text className="text-lg font-bold text-gray-900 mb-3">Quick Actions</Text>
-        <View className="flex-row justify-between gap-3">
-          <TouchableOpacity
-            className="flex-1 bg-white rounded-2xl p-4 items-center shadow-md"
-            onPress={() => router.push('/orders')}>
-            <View className="w-14 h-14 rounded-full bg-green-100 justify-center items-center mb-2">
-              <MaterialIcons name="shopping-bag" size={24} color="#059669" />
+        {token && (
+          <>
+            <View className="mb-4 px-4">
+              <Text className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3 px-1">Quick actions</Text>
+              <View className="flex-row justify-between gap-3">
+                <TouchableOpacity
+                  className="flex-1 bg-white rounded-2xl p-4 items-center border border-gray-100 active:opacity-90"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}
+                  onPress={() => router.push('/orders')}>
+                  <View
+                    className="w-12 h-12 rounded-full justify-center items-center mb-2"
+                    style={{ backgroundColor: 'rgba(5, 150, 105, 0.1)' }}>
+                    <MaterialIcons name="shopping-bag" size={UI.icon.md} color={UI.color.primary} />
+                  </View>
+                  <Text className="text-[13px] font-semibold text-gray-900">Orders</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="flex-1 bg-white rounded-2xl p-4 items-center border border-gray-100 active:opacity-90"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}
+                  onPress={() => router.push('/wishlist')}>
+                  <View
+                    className="w-12 h-12 rounded-full justify-center items-center mb-2"
+                    style={{ backgroundColor: 'rgba(5, 150, 105, 0.1)' }}>
+                    <MaterialIcons name="favorite-border" size={UI.icon.md} color={UI.color.primary} />
+                  </View>
+                  <Text className="text-[13px] font-semibold text-gray-900">Wishlist</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="flex-1 bg-white rounded-2xl p-4 items-center border border-gray-100 active:opacity-90"
+                  onPress={() => toast('Coming soon', 'info')}>
+                  <View
+                    className="w-12 h-12 rounded-full justify-center items-center mb-2"
+                    style={{ backgroundColor: 'rgba(5, 150, 105, 0.1)' }}>
+                    <MaterialIcons name="local-offer" size={UI.icon.md} color={UI.color.primary} />
+                  </View>
+                  <Text className="text-[13px] font-semibold text-gray-900">Offers</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <Text className="text-[13px] font-semibold text-gray-900">Orders</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 bg-white rounded-2xl p-4 items-center shadow-md"
-            onPress={() => router.push('/wishlist')}>
-            <View className="w-14 h-14 rounded-full bg-blue-100 justify-center items-center mb-2">
-              <MaterialIcons name="favorite" size={24} color="#3B82F6" />
-            </View>
-            <Text className="text-[13px] font-semibold text-gray-900">Wishlist</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 bg-white rounded-2xl p-4 items-center shadow-md"
-            onPress={() => toast('Coming soon!', 'info')}>
-            <View className="w-14 h-14 rounded-full bg-yellow-100 justify-center items-center mb-2">
-              <MaterialIcons name="card-giftcard" size={24} color="#F59E0B" />
-            </View>
-            <Text className="text-[13px] font-semibold text-gray-900">Coupons</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
 
-      {/* Menu Section */}
-      <View className="mb-4 px-4">
-        <Text className="text-lg font-bold text-gray-900 mb-3">Account</Text>
-        <View className="bg-white rounded-2xl overflow-hidden">
-          <TouchableOpacity
-            className="flex-row justify-between items-center p-4 border-b border-gray-100"
-            onPress={() => router.push('/orders')}>
-            <View className="flex-row items-center gap-4 flex-1">
-              <MaterialIcons name="shopping-bag" size={24} color="#059669" />
-              <Text className="text-base text-gray-900 font-medium">My Orders</Text>
+            <View className="mb-4 px-4">
+              <Text className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3 px-1">Account</Text>
+              <View className="bg-white rounded-2xl overflow-hidden border border-gray-100">
+                {(
+                  [
+                    { icon: 'shopping-bag' as const, label: 'My orders', path: '/orders' as const },
+                    { icon: 'location-on' as const, label: 'Saved addresses', path: '/saved-addresses' as const },
+                    { icon: 'payment' as const, label: 'Payment methods', path: '/payment-methods' as const },
+                    { icon: 'notifications-none' as const, label: 'Notifications', path: '/notifications' as const },
+                  ] as const
+                ).map((row, idx) => (
+                  <TouchableOpacity
+                    key={row.path}
+                    className={`flex-row justify-between items-center p-4 ${idx < 3 ? 'border-b border-gray-100' : ''}`}
+                    onPress={() => router.push(row.path)}>
+                    <View className="flex-row items-center gap-3 flex-1">
+                      <MaterialIcons name={row.icon} size={UI.icon.lg} color={UI.color.primary} />
+                      <Text className="text-base text-gray-900 font-medium">{row.label}</Text>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={UI.icon.lg} color="#9CA3AF" />
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-            <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            className="flex-row justify-between items-center p-4 border-b border-gray-100"
-            onPress={() => router.push('/saved-addresses')}>
-            <View className="flex-row items-center gap-4 flex-1">
-              <MaterialIcons name="location-on" size={24} color="#059669" />
-              <Text className="text-base text-gray-900 font-medium">Saved Addresses</Text>
+            <View className="mb-4 px-4">
+              <Text className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3 px-1">Support</Text>
+              <View className="bg-white rounded-2xl overflow-hidden border border-gray-100">
+                {(
+                  [
+                    { icon: 'help-outline' as const, label: 'Help center', path: '/help-center' as const },
+                    { icon: 'privacy-tip' as const, label: 'Privacy policy', path: '/privacy-policy' as const },
+                    { icon: 'description' as const, label: 'Terms & conditions', path: '/terms' as const },
+                  ] as const
+                ).map((row, idx) => (
+                  <TouchableOpacity
+                    key={row.path}
+                    className={`flex-row justify-between items-center p-4 ${idx < 2 ? 'border-b border-gray-100' : ''}`}
+                    onPress={() => router.push(row.path)}>
+                    <View className="flex-row items-center gap-3 flex-1">
+                      <MaterialIcons name={row.icon} size={UI.icon.lg} color={UI.color.primary} />
+                      <Text className="text-base text-gray-900 font-medium">{row.label}</Text>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={UI.icon.lg} color="#9CA3AF" />
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-            <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            className="flex-row justify-between items-center p-4 border-b border-gray-100"
-            onPress={() => router.push('/payment-methods')}>
-            <View className="flex-row items-center gap-4 flex-1">
-              <MaterialIcons name="payment" size={24} color="#059669" />
-              <Text className="text-base text-gray-900 font-medium">Payment Methods</Text>
+            <View className="px-4 mb-6">
+              <TouchableOpacity
+                className="flex-row items-center justify-center bg-white p-4 rounded-2xl gap-2 border border-red-200 active:opacity-90"
+                onPress={handleLogout}>
+                <MaterialIcons name="logout" size={UI.icon.lg} color="#EF4444" />
+                <Text className="text-base font-semibold text-red-500">Log out</Text>
+              </TouchableOpacity>
             </View>
-            <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="flex-row justify-between items-center p-4"
-            onPress={() => router.push('/notifications')}>
-            <View className="flex-row items-center gap-4 flex-1">
-              <MaterialIcons name="notifications" size={24} color="#059669" />
-              <Text className="text-base text-gray-900 font-medium">Notifications</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Support Section */}
-      <View className="mb-4 px-4">
-        <Text className="text-lg font-bold text-gray-900 mb-3">Support</Text>
-        <View className="bg-white rounded-2xl overflow-hidden">
-          <TouchableOpacity
-            className="flex-row justify-between items-center p-4 border-b border-gray-100"
-            onPress={() => router.push('/help-center')}>
-            <View className="flex-row items-center gap-4 flex-1">
-              <MaterialIcons name="help" size={24} color="#059669" />
-              <Text className="text-base text-gray-900 font-medium">Help Center</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="flex-row justify-between items-center p-4 border-b border-gray-100"
-            onPress={() => router.push('/privacy-policy')}>
-            <View className="flex-row items-center gap-4 flex-1">
-              <MaterialIcons name="privacy-tip" size={24} color="#059669" />
-              <Text className="text-base text-gray-900 font-medium">Privacy Policy</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="flex-row justify-between items-center p-4"
-            onPress={() => router.push('/terms')}>
-            <View className="flex-row items-center gap-4 flex-1">
-              <MaterialIcons name="description" size={24} color="#059669" />
-              <Text className="text-base text-gray-900 font-medium">Terms & Conditions</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Logout */}
-      <View className="mb-8 px-4">
-        <TouchableOpacity
-          className="flex-row items-center justify-center bg-white p-4 rounded-2xl gap-3 border border-red-200"
-          onPress={handleLogout}>
-          <MaterialIcons name="logout" size={24} color="#EF4444" />
-          <Text className="text-base font-semibold text-red-500">Logout</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          </>
+        )}
+      </ScrollView>
     </View>
   );
 }

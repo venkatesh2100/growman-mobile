@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import Loading from '../../components/Loading';
+import { ProductGridSkeleton } from '../../components/skeletons/ProductGridSkeleton';
+import { UI } from '../../lib/ui';
 import ProductCard from '../../components/ProductCard';
 import { apiFetch } from '../../lib/api';
 import { Product } from '../../lib/types';
@@ -134,20 +135,42 @@ export default function CategoryScreen() {
   );
 
   if (loading && products.length === 0) {
-    return <Loading />;
+    return (
+      <View className="flex-1" style={{ backgroundColor: UI.color.canvas, paddingTop: insets.top }}>
+        <View className="flex-row items-center px-4 py-3 border-b border-emerald-100 bg-white">
+          <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
+            <MaterialIcons name="arrow-back" size={UI.icon.lg} color={UI.color.ink} />
+          </TouchableOpacity>
+          <Text className="text-lg font-bold text-emerald-950 ml-2 flex-1" numberOfLines={1}>
+            {categoryName || 'Category'}
+          </Text>
+        </View>
+        <View className="flex-1 px-2 pt-3">
+          <ProductGridSkeleton count={6} />
+        </View>
+      </View>
+    );
   }
 
   return (
-    <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
+    <View className="flex-1" style={{ backgroundColor: UI.color.canvas, paddingTop: insets.top }}>
+      <View className="flex-row items-center px-4 py-3 border-b border-emerald-100 bg-white gap-2">
+        <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
+          <MaterialIcons name="arrow-back" size={UI.icon.lg} color={UI.color.ink} />
+        </TouchableOpacity>
+        <Text className="text-lg font-bold text-emerald-950 flex-1" numberOfLines={1}>
+          {categoryName || slug}
+        </Text>
+      </View>
       {/* Subcategories Filter */}
       {subcategories.length > 0 && (
-        <View className="bg-white py-3 border-b border-gray-200">
+        <View className="bg-white py-3 border-b border-emerald-100">
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
             <TouchableOpacity
-              className={`px-4 py-2 rounded-[20px] mr-2 ${selectedSubcategory === null ? 'bg-green-600' : 'bg-gray-100'}`}
+              className={`px-4 py-2 rounded-full mr-2 ${selectedSubcategory === null ? 'bg-emerald-700' : 'bg-gray-100'}`}
               onPress={() => setSelectedSubcategory(null)}>
               <Text className={`text-sm font-medium ${selectedSubcategory === null ? 'text-white' : 'text-gray-900'}`}>
                 All

@@ -103,7 +103,15 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         automaticallyAdjustKeyboardInsets={true}>
-        <View className="flex-1 justify-center p-6 mt-10">
+        <View className="flex-1 justify-center p-6 mt-6">
+          {/* <TouchableOpacity
+            onPress={() => router.replace('/(auth)')}
+            className="flex-row items-center gap-1 mb-6 self-start"
+            hitSlop={12}>
+            <MaterialIcons name="arrow-back" size={22} color="#374151" />
+            <Text className="text-base text-gray-700">Home</Text>
+          </TouchableOpacity> */}
+
           <Animated.View entering={FadeInDown.delay(100).duration(400)} className="items-center mb-6">
             <View className="w-16 h-16 rounded-full bg-green-600 items-center justify-center">
               <MaterialIcons name="login" size={32} color="#FFFFFF" />
@@ -113,9 +121,9 @@ export default function LoginScreen() {
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
             <Text className="text-[28px] font-bold text-gray-900 mb-2 text-center">Sign in to your account</Text>
             <Text className="text-sm text-gray-500 mb-8 text-center">
-              Or{' '}
+              New here?{' '}
               <Text className="text-green-600 font-semibold" onPress={() => router.push('/(auth)/signup')}>
-                create a new account
+                Create an account
               </Text>
             </Text>
           </Animated.View>
