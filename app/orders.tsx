@@ -1,16 +1,20 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   FlatList,
   Image,
+  RefreshControl,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Loading from '../components/Loading';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { OrderListSkeleton } from '../components/skeletons/OrderListSkeleton';
 import { apiFetch } from '../lib/api';
+import { UI } from '../lib/ui';
+import { useAuthStore } from '../store/authStore';
 
 interface OrderItem {
   id: number;
@@ -37,13 +41,16 @@ interface Order {
   items: OrderItem[];
 }
 
-const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
-  paid: { bg: 'bg-green-100', text: 'text-green-700' },
-  created: { bg: 'bg-amber-100', text: 'text-amber-700' },
-  pending: { bg: 'bg-amber-100', text: 'text-amber-700' },
-  failed: { bg: 'bg-red-100', text: 'text-red-700' },
-  cancelled: { bg: 'bg-gray-100', text: 'text-gray-600' },
-};
+interface PaginationMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+const PAGE_SIZE = 15;
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
@@ -63,128 +70,328 @@ function getStatusDisplay(status: string, paymentStatus: string) {
   return status || paymentStatus || 'Pending';
 }
 
+function statusChipStyle(key: string): { bg: string; text: string; border: string } {
+  switch (key) {
+    case 'paid':
+      return { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200' };
+    case 'created':
+    case 'pending':
+      return { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' };
+    case 'failed':
+      return { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' };
+    case 'cancelled':
+      return { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200' };
+    default:
+      return { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200' };
+  }
+}
+
 export default function OrdersScreen() {
-  const insets = useSafeAreaInsets();
+  const { token } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadOrders();
-  }, []);
+  const fetchOrders = useCallback(
+    async (pageNum: number, append: boolean) => {
+      if (!token) return;
+      const response = await apiFetch(`/orders?page=${pageNum}&pageSize=${PAGE_SIZE}`);
+      if (response.status === 401) {
+        setError('Session expired. Please sign in again.');
+        setOrders([]);
+        return;
+      }
+      if (!response.ok) {
+        if (!append) setError('Could not load orders. Pull to retry.');
+        return;
+      }
+      const data = await response.json();
+      const list: Order[] = Array.isArray(data) ? data : data.data || [];
+      const meta: PaginationMeta | undefined = data.pagination;
 
-  const loadOrders = async () => {
-    try {
-      const response = await apiFetch('/orders?page=1&pageSize=20');
-      if (response.ok) {
-        const data = await response.json();
-        const list = Array.isArray(data) ? data : data.data || [];
+      if (append) {
+        setOrders((prev) => [...prev, ...list]);
+      } else {
         setOrders(list);
       }
-    } catch (error) {
-      console.error('Error loading orders:', error);
-    } finally {
+      setPage(pageNum);
+      if (meta) {
+        setHasNext(meta.hasNext);
+        setTotal(meta.total);
+      } else {
+        setHasNext(list.length >= PAGE_SIZE);
+      }
+      setError(null);
+    },
+    [token]
+  );
+
+  useEffect(() => {
+    if (!token) {
       setLoading(false);
+      setOrders([]);
+      return;
     }
-  };
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await fetchOrders(1, false);
+      } catch {
+        if (!cancelled) setError('Network error. Check your connection.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, fetchOrders]);
+
+  const onRefresh = useCallback(async () => {
+    if (!token) return;
+    setRefreshing(true);
+    try {
+      await fetchOrders(1, false);
+    } catch {
+      setError('Network error. Check your connection.');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [token, fetchOrders]);
+
+  const loadMore = useCallback(async () => {
+    if (!token || !hasNext || loadingMore || loading || refreshing) return;
+    setLoadingMore(true);
+    try {
+      await fetchOrders(page + 1, true);
+    } catch {
+      /* keep list */
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [token, hasNext, loadingMore, loading, refreshing, page, fetchOrders]);
 
   const renderOrderItem = (item: OrderItem) => (
-    <View key={item.id} className="flex-row items-center gap-3 py-3 border-b border-gray-100 last:border-b-0">
+    <View key={item.id} className="flex-row items-center gap-3 py-2.5 border-b border-emerald-50 last:border-b-0">
       <Image
         source={{ uri: item.imageUrl || 'https://via.placeholder.com/48' }}
-        className="w-12 h-12 rounded-lg bg-gray-100"
+        className="w-11 h-11 rounded-xl bg-gray-100"
         resizeMode="cover"
       />
       <View className="flex-1 min-w-0">
-        <Text className="text-sm font-medium text-gray-900" numberOfLines={2}>
+        <Text className="text-sm font-medium text-emerald-950" numberOfLines={2}>
           {item.name}
         </Text>
         <Text className="text-xs text-gray-500 mt-0.5">
-          Qty: {item.quantity} × ₹{item.price.toFixed(0)}
+          {item.quantity} × ₹{item.price.toFixed(0)}
         </Text>
       </View>
-      <Text className="text-sm font-semibold text-gray-900">
-        ₹{(item.price * item.quantity).toFixed(0)}
-      </Text>
+      <Text className="text-sm font-bold text-gray-900">₹{(item.price * item.quantity).toFixed(0)}</Text>
     </View>
   );
 
-  const renderOrder = ({ item }: { item: Order }) => {
+  const renderOrder = ({ item, index }: { item: Order; index: number }) => {
     const statusKey = (item.paymentStatus || item.status || 'pending').toLowerCase();
-    const statusStyle = STATUS_STYLES[statusKey] || { bg: 'bg-gray-100', text: 'text-gray-600' };
+    const chip = statusChipStyle(statusKey);
     const statusDisplay = getStatusDisplay(item.status, item.paymentStatus);
+    const itemCount = item.items?.length ?? 0;
 
     return (
-      <View className="bg-white rounded-2xl mb-4 overflow-hidden shadow-sm border border-gray-100">
-        {/* Header */}
-        <View className="flex-row justify-between items-start p-4 pb-3">
-          <View>
-            <Text className="text-lg font-bold text-gray-900">Order #{item.id}</Text>
-            <Text className="text-xs text-gray-500 mt-1">{formatDate(item.createdAt)}</Text>
-          </View>
-          <View className={`px-3 py-1.5 rounded-full ${statusStyle.bg}`}>
-            <Text className={`text-xs font-semibold ${statusStyle.text}`}>{statusDisplay}</Text>
-          </View>
-        </View>
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 45, 400)).duration(320)}>
+        <View
+          className="bg-white rounded-2xl mb-4 overflow-hidden border border-emerald-100/80"
+          style={{
+            shadowColor: '#14532D',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+          }}>
+          <View className="flex-row">
+            <View className="w-1 self-stretch" style={{ backgroundColor: UI.color.primary }} />
+            <View className="flex-1 p-4 pl-3">
+              <View className="flex-row justify-between items-start gap-2">
+                <View className="flex-1 min-w-0">
+                  <Text className="text-base font-bold text-emerald-950">Order #{item.id}</Text>
+                  <View className="flex-row items-center gap-1.5 mt-1">
+                    <MaterialIcons name="schedule" size={14} color={UI.color.muted} />
+                    <Text className="text-xs text-gray-500">{formatDate(item.createdAt)}</Text>
+                  </View>
+                </View>
+                <View className={`px-3 py-1 rounded-full border ${chip.bg} ${chip.border}`}>
+                  <Text className={`text-xs font-bold ${chip.text}`}>{statusDisplay}</Text>
+                </View>
+              </View>
 
-        {/* Items */}
-        <View className="px-4 pb-3">
-          {item.items?.slice(0, 3).map(renderOrderItem)}
-          {item.items && item.items.length > 3 && (
-            <Text className="text-xs text-gray-500 py-2">
-              +{item.items.length - 3} more item(s)
-            </Text>
-          )}
-        </View>
+              {itemCount > 0 && (
+                <View className="mt-3 pt-3 border-t border-emerald-50">
+                  <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                  </Text>
+                  {item.items.slice(0, 4).map(renderOrderItem)}
+                  {itemCount > 4 && (
+                    <Text className="text-xs text-emerald-700 font-medium py-1">
+                      +{itemCount - 4} more in this order
+                    </Text>
+                  )}
+                </View>
+              )}
 
-        {/* Address (compact) */}
-        {(item.addressLine || item.city) && (
-          <View className="px-4 py-2 bg-gray-50 border-t border-gray-100">
-            <View className="flex-row items-start gap-2">
-              <MaterialIcons name="location-on" size={14} color="#6B7280" />
-              <Text className="text-xs text-gray-600 flex-1" numberOfLines={2}>
-                {[item.addressLine, item.city, item.state, item.pincode].filter(Boolean).join(', ')}
-              </Text>
+              {(item.addressLine || item.city) && (
+                <View className="mt-3 flex-row items-start gap-2 p-3 rounded-xl bg-emerald-50/80">
+                  <MaterialIcons name="location-on" size={18} color={UI.color.primary} />
+                  <Text className="text-xs text-gray-700 flex-1 leading-5" numberOfLines={3}>
+                    {[item.addressLine, item.city, item.state, item.pincode].filter(Boolean).join(', ')}
+                  </Text>
+                </View>
+              )}
+
+              <View className="flex-row justify-between items-center mt-4 pt-3 border-t border-emerald-50">
+                <Text className="text-sm font-semibold text-gray-600">Total</Text>
+                <Text className="text-xl font-bold" style={{ color: UI.color.primaryDark }}>
+                  ₹{item.amount.toFixed(0)}
+                </Text>
+              </View>
+
+              {(item.razorpayPaymentId || item.razorpayOrderId) && (
+                <Text className="text-[10px] text-gray-400 mt-2" numberOfLines={1}>
+                  Ref: {item.razorpayPaymentId || item.razorpayOrderId}
+                </Text>
+              )}
+
+              <TouchableOpacity
+                className="flex-row items-center justify-center gap-2 mt-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100 active:opacity-90"
+                onPress={() =>
+                  router.push({ pathname: '/order-success', params: { orderId: String(item.id) } })
+                }>
+                <Text className="text-sm font-semibold" style={{ color: UI.color.primaryDark }}>
+                  View order details
+                </Text>
+                <MaterialIcons name="arrow-forward" size={18} color={UI.color.primaryDark} />
+              </TouchableOpacity>
             </View>
           </View>
-        )}
-
-        {/* Footer */}
-        <View className="flex-row justify-between items-center px-4 py-4 bg-gray-50 border-t border-gray-100">
-          <Text className="text-base font-semibold text-gray-700">Total</Text>
-          <Text className="text-xl font-bold text-green-600">₹{item.amount.toFixed(0)}</Text>
         </View>
-
-        {/* View details */}
-        <TouchableOpacity
-          className="flex-row items-center justify-center gap-2 py-3 border-t border-gray-100 active:bg-gray-50"
-          onPress={() => router.push(`/order-success?orderId=${item.id}` as any)}
-          activeOpacity={0.7}>
-          <Text className="text-sm font-medium text-green-600">View details</Text>
-          <MaterialIcons name="chevron-right" size={18} color="#059669" />
-        </TouchableOpacity>
-      </View>
+      </Animated.View>
     );
   };
 
-  if (loading) {
-    return <Loading />;
+  const listHeader = () => (
+    <View className="mb-4">
+      {total > 0 && (
+        <Text className="text-sm text-gray-600">
+          {total} {total === 1 ? 'order' : 'orders'} total
+          {hasNext ? ' · more below' : ''}
+        </Text>
+      )}
+    </View>
+  );
+
+  const listFooter = () => (
+    <View className="py-4 items-center">
+      {loadingMore ? (
+        <Text className="text-xs text-gray-500">Loading more…</Text>
+      ) : hasNext && orders.length > 0 ? (
+        <Text className="text-xs text-gray-400">Scroll for more</Text>
+      ) : orders.length > 0 ? (
+        <Text className="text-xs text-gray-400">You&apos;re all caught up</Text>
+      ) : null}
+    </View>
+  );
+
+  const headerBar = (
+    <View className="flex-row items-center px-4 py-3 border-b border-emerald-100 bg-white">
+      <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2 rounded-xl active:bg-emerald-50">
+        <MaterialIcons name="arrow-back" size={UI.icon.lg} color={UI.color.ink} />
+      </TouchableOpacity>
+      <View className="flex-1 ml-1">
+        <Text className="text-lg font-bold text-emerald-950">My orders</Text>
+        {!loading && orders.length > 0 && (
+          <Text className="text-xs text-gray-500">{orders.length} shown</Text>
+        )}
+      </View>
+    </View>
+  );
+
+  if (!token) {
+    return (
+      <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: UI.color.canvas }}>
+        {headerBar}
+        <View className="flex-1 justify-center items-center px-8">
+          <View
+            className="w-20 h-20 rounded-full items-center justify-center mb-4"
+            style={{ backgroundColor: 'rgba(5, 150, 105, 0.12)' }}>
+            <MaterialIcons name="lock-outline" size={40} color={UI.color.primary} />
+          </View>
+          <Text className="text-lg font-semibold text-emerald-950 text-center mb-2">Sign in to see orders</Text>
+          <Text className="text-sm text-gray-600 text-center mb-6">
+            Your order history is available after you sign in.
+          </Text>
+          <TouchableOpacity
+            className="px-8 py-3.5 rounded-2xl active:opacity-90"
+            style={{ backgroundColor: UI.color.primary }}
+            onPress={() => router.push('/(auth)/login')}>
+            <Text className="text-base font-semibold text-white">Sign in</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (loading && orders.length === 0) {
+    return (
+      <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: UI.color.canvas }}>
+        {headerBar}
+        <OrderListSkeleton />
+      </SafeAreaView>
+    );
   }
 
   return (
-    <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
-      {orders.length === 0 ? (
+    <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: UI.color.canvas }}>
+      {headerBar}
+
+      {error && orders.length === 0 ? (
         <View className="flex-1 justify-center items-center px-8">
-          <View className="w-20 h-20 rounded-full bg-gray-100 items-center justify-center mb-4">
-            <MaterialIcons name="receipt-long" size={40} color="#9CA3AF" />
+          <MaterialIcons name="error-outline" size={48} color={UI.color.muted} />
+          <Text className="text-base text-gray-700 text-center mt-4 mb-6">{error}</Text>
+          <TouchableOpacity
+            className="px-6 py-3 rounded-2xl border border-emerald-200 bg-white active:opacity-90"
+            onPress={() => {
+              setLoading(true);
+              fetchOrders(1, false)
+                .catch(() => {})
+                .finally(() => setLoading(false));
+            }}>
+            <Text className="font-semibold" style={{ color: UI.color.primaryDark }}>
+              Retry
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : orders.length === 0 ? (
+        <View className="flex-1 justify-center items-center px-8">
+          <View
+            className="w-20 h-20 rounded-full items-center justify-center mb-4"
+            style={{ backgroundColor: 'rgba(5, 150, 105, 0.1)' }}>
+            <MaterialIcons name="receipt-long" size={40} color={UI.color.primary} />
           </View>
-          <Text className="text-lg font-medium text-gray-600 text-center mb-2">No orders yet</Text>
-          <Text className="text-sm text-gray-500 text-center mb-6">
-            Your order history will appear here once you make a purchase.
+          <Text className="text-lg font-semibold text-emerald-950 text-center mb-2">No orders yet</Text>
+          <Text className="text-sm text-gray-600 text-center mb-8">
+            When you buy plants, your orders and delivery details will show up here.
           </Text>
           <TouchableOpacity
-            className="bg-green-600 px-6 py-3 rounded-xl active:bg-green-700"
+            className="flex-row items-center px-8 py-3.5 rounded-2xl gap-2 active:opacity-90"
+            style={{ backgroundColor: UI.color.primary }}
             onPress={() => router.push('/(tabs)/shop')}>
-            <Text className="text-base font-semibold text-white">Start Shopping</Text>
+            <MaterialIcons name="eco" size={22} color="#fff" />
+            <Text className="text-base font-semibold text-white">Browse shop</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -192,10 +399,22 @@ export default function OrdersScreen() {
           data={orders}
           renderItem={renderOrder}
           keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+          ListHeaderComponent={listHeader}
+          ListFooterComponent={listFooter}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[UI.color.primary]}
+              tintColor={UI.color.primary}
+            />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.35}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }

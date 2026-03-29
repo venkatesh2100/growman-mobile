@@ -1,7 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { StatusBar } from 'react-native';
+import { StatusBar  } from 'react-native';
+import Chatbot from '../../components/Chatbot';
 import SearchModal from '../../components/SearchModal';
+import { openChatbot } from '../../lib/chatbotOpener';
 
 export default function TabLayout() {
   return (
@@ -43,6 +45,23 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="chat"
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              openChatbot();
+            },
+          }}
+          options={{
+            title: 'Dootha',
+            tabBarIcon: ({ color, size }) => (
+              // <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="auto-awesome" size={size} color={color} />
+              // </View>
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="account"
           options={{
             title: 'Account',
@@ -50,6 +69,7 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
+      <Chatbot />
     </>
   );
 }

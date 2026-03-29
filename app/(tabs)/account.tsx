@@ -1,10 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { AccountSkeleton } from '../../components/skeletons/AccountSkeleton';
 import { toast } from '../../components/Toast';
 import { apiFetch } from '../../lib/api';
 import { User } from '../../lib/types';
@@ -16,31 +15,27 @@ export default function AccountScreen() {
   const insets = useSafeAreaInsets();
   const { clearAuth, token } = useAuthStore();
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const loadUser = useCallback(async () => {
-    try {
-      const response = await apiFetch('/auth/me');
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data);
-      }
-    } catch (error) {
-      console.error('Error loading user:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     if (!token) {
-      setLoading(false);
       setUser(null);
       return;
     }
-    setLoading(true);
-    loadUser();
-  }, [token, loadUser]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await apiFetch('/auth/me');
+        if (cancelled || !response.ok) return;
+        const data = await response.json();
+        if (!cancelled) setUser(data);
+      } catch (error) {
+        console.error('Error loading user:', error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const handleLogout = () => {
     showConfirm('Logout', 'Are you sure you want to logout?', [
@@ -55,14 +50,6 @@ export default function AccountScreen() {
       },
     ]);
   };
-
-  if (token && loading) {
-    return (
-      <View className="flex-1" style={{ backgroundColor: UI.color.canvasAlt, paddingTop: insets.top }}>
-        <AccountSkeleton />
-      </View>
-    );
-  }
 
   return (
     <View className="flex-1" style={{ backgroundColor: UI.color.canvasAlt }}>
@@ -82,9 +69,11 @@ export default function AccountScreen() {
               <MaterialIcons name="person" size={48} color={UI.color.primary} />
             </View>
           </View>
-          <Text className="text-2xl font-bold text-gray-900 mb-1">{user?.name ?? 'Guest'}</Text>
-          {user?.email ? <Text className="text-base text-gray-600 mb-1">{user.email}</Text> : null}
-          {user?.phone ? <Text className="text-sm text-gray-500">{user.phone}</Text> : null}
+          <Text className="text-2xl font-bold text-gray-900 mb-1">
+            {token ? user?.name ?? 'Your account' : 'Guest'}
+          </Text>
+          {token && user?.email ? <Text className="text-base text-gray-600 mb-1">{user.email}</Text> : null}
+          {token && user?.phone ? <Text className="text-sm text-gray-500">{user.phone}</Text> : null}
           {!token && (
             <TouchableOpacity
               className="mt-4 px-8 py-3 rounded-2xl bg-emerald-700 active:opacity-90"
@@ -197,10 +186,29 @@ export default function AccountScreen() {
 
             <View className="px-4 mb-6">
               <TouchableOpacity
-                className="flex-row items-center justify-center bg-white p-4 rounded-2xl gap-2 border border-red-200 active:opacity-90"
-                onPress={handleLogout}>
-                <MaterialIcons name="logout" size={UI.icon.lg} color="#EF4444" />
-                <Text className="text-base font-semibold text-red-500">Log out</Text>
+                className="flex-row items-center justify-between bg-white py-4 px-4 rounded-2xl border border-gray-200 active:bg-gray-50"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 6,
+                  elevation: 2,
+                }}
+                onPress={handleLogout}
+                accessibilityRole="button"
+                accessibilityLabel="Log out">
+                <View className="flex-row items-center gap-3">
+                  <View
+                    className="w-10 h-10 rounded-full items-center justify-center"
+                    style={{ backgroundColor: 'rgba(107, 114, 128, 0.12)' }}>
+                    <MaterialIcons name="logout" size={22} color="#4B5563" />
+                  </View>
+                  <View>
+                    <Text className="text-base font-semibold text-gray-900">Log out</Text>
+                    <Text className="text-xs text-gray-500 mt-0.5">Sign out on this device</Text>
+                  </View>
+                </View>
+                <MaterialIcons name="chevron-right" size={22} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
           </>

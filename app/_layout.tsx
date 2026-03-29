@@ -4,7 +4,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AlertContainer } from '../components/Alert';
 import { ToastContainer } from '../components/Toast';
-import Chatbot from '@/components/Chatbot';
 import './global.css';
 
 export default function RootLayout() {
@@ -25,7 +24,6 @@ export default function RootLayout() {
         )}
         <ToastContainer />
         <AlertContainer />
-        <Chatbot />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
