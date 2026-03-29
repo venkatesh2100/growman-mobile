@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useRouter, useSegments } from 'expo-router';
+import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
   Image,
@@ -23,6 +23,7 @@ import { UI } from '../lib/ui';
 import { showAlert, showConfirm } from './Alert';
 import { toast } from './Toast';
 import MarkdownRenderer from './product/MarkdownRenderer';
+import { setChatbotOpener } from '../lib/chatbotOpener';
 
 interface Message {
   id: string;
@@ -40,11 +41,12 @@ const DEFAULT_MESSAGE: Message = {
 
 export default function Chatbot() {
   const router = useRouter();
-  const segments = useSegments();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Only show chat button when on tab screens (home, shop, cart, account)
-  const isTabScreen = segments[0] === '(tabs)';
+  useEffect(() => {
+    setChatbotOpener(() => setIsOpen(true));
+    return () => setChatbotOpener(null);
+  }, []);
   const [messages, setMessages] = useState<Message[]>([DEFAULT_MESSAGE]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -248,25 +250,7 @@ export default function Chatbot() {
 
   return (
     <>
-      {/* Chat Button - only visible when bottom tabs are shown */}
-      {isTabScreen && (
-        <TouchableOpacity
-          className="absolute bottom-16 right-4 w-14 h-14 rounded-full justify-center items-center shadow-lg z-[1000]"
-          style={{
-            backgroundColor: UI.color.primary,
-            shadowColor: '#14532D',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.25,
-            shadowRadius: 8,
-            elevation: 8,
-          }}
-          onPress={() => setIsOpen(true)}
-          activeOpacity={0.85}>
-          <MaterialIcons name="chat" size={UI.icon.lg} color="#FFFFFF" />
-        </TouchableOpacity>
-      )}
-
-      {/* Chat Modal */}
+      {/* Opens from tab bar Chat tab via openChatbot() */}
       <Modal
         visible={isOpen}
         animationType="fade"
