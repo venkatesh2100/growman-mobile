@@ -11,10 +11,10 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { OrderListSkeleton } from '../components/skeletons/OrderListSkeleton';
 import { apiFetch } from '../lib/api';
 import { UI } from '../lib/ui';
 import { useAuthStore } from '../store/authStore';
+import { useSearchStore } from '../store/searchStore';
 
 interface OrderItem {
   id: number;
@@ -33,6 +33,7 @@ interface Order {
   status: string;
   paymentStatus: string;
   createdAt: string;
+  expectedDeliveryDate?: string;
   customerName?: string;
   addressLine?: string;
   city?: string;
@@ -63,6 +64,45 @@ function formatDate(dateStr: string) {
   });
 }
 
+function formatShortDate(date: Date) {
+  return date.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function computeDeliveryDate(createdAt: string, expectedDeliveryDate?: string) {
+  if (expectedDeliveryDate) {
+    const parsed = new Date(expectedDeliveryDate);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  const d = new Date(createdAt);
+  d.setDate(d.getDate() + 7);
+  return d;
+}
+
+type ProgressStep = { key: string; label: string };
+const ORDER_PROGRESS_STEPS: ProgressStep[] = [
+  { key: 'confirmed', label: 'Order confirmed' },
+  { key: 'shipped', label: 'Shipped' },
+  { key: 'out_for_delivery', label: 'Out for delivery' },
+  { key: 'delivered', label: 'Delivered' },
+];
+
+function progressIndex(order: Order): number {
+  const s = (order.status || '').toLowerCase();
+  const p = (order.paymentStatus || '').toLowerCase();
+  if (s === 'delivered') return 3;
+  if (s === 'out_for_delivery') return 2;
+  if (s === 'shipped') return 1;
+  if (s === 'confirmed' || s === 'paid' || p === 'paid') return 0;
+  if (s === 'cancelled' || s === 'failed' || p === 'failed') return -1;
+  return 0;
+}
+
 function getStatusDisplay(status: string, paymentStatus: string) {
   if (paymentStatus === 'paid' || status === 'paid') return 'Paid';
   if (paymentStatus === 'failed' || status === 'failed') return 'Failed';
@@ -88,6 +128,7 @@ function statusChipStyle(key: string): { bg: string; text: string; border: strin
 
 export default function OrdersScreen() {
   const { token } = useAuthStore();
+  const submitSearchAndGoToShop = useSearchStore((s) => s.submitSearchAndGoToShop);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -202,79 +243,155 @@ export default function OrdersScreen() {
     const chip = statusChipStyle(statusKey);
     const statusDisplay = getStatusDisplay(item.status, item.paymentStatus);
     const itemCount = item.items?.length ?? 0;
+    const eta = computeDeliveryDate(item.createdAt, item.expectedDeliveryDate);
+    const progress = progressIndex(item);
+    const isCancelled = progress < 0;
+    const etaExpired = !isCancelled && progress < 3 && eta.getTime() < Date.now();
+    const relatedKeywords = (item.items || []).slice(0, 3).map((x) => x.name).filter(Boolean);
+    const primaryItem = item.items?.[0];
+    const remainingCount = Math.max(0, itemCount - 1);
+    const etaText = isCancelled
+      ? `Order ${item.status || item.paymentStatus}`
+      : etaExpired
+      ? "Delivery delayed. Please contact Support"
+      : progress >= 3
+      ? `Delivered on ${formatShortDate(eta)}`
+      : `Arriving by ${formatShortDate(eta)}`;
 
     return (
       <Animated.View entering={FadeInDown.delay(Math.min(index * 45, 400)).duration(320)}>
         <View
-          className="bg-white rounded-2xl mb-4 overflow-hidden border border-emerald-100/80"
+          className="bg-white rounded-2xl mb-4 overflow-hidden border border-gray-200"
           style={{
-            shadowColor: '#14532D',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
-            elevation: 3,
+            shadowColor: '#0f172a',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.08,
+            shadowRadius: 4,
+            elevation: 2,
           }}>
-          <View className="flex-row">
-            <View className="w-1 self-stretch" style={{ backgroundColor: UI.color.primary }} />
-            <View className="flex-1 p-4 pl-3">
-              <View className="flex-row justify-between items-start gap-2">
-                <View className="flex-1 min-w-0">
-                  <Text className="text-base font-bold text-emerald-950">Order #{item.id}</Text>
-                  <View className="flex-row items-center gap-1.5 mt-1">
-                    <MaterialIcons name="schedule" size={14} color={UI.color.muted} />
-                    <Text className="text-xs text-gray-500">{formatDate(item.createdAt)}</Text>
+          <View className="p-4">
+            <View className="flex-row justify-between items-start gap-2">
+              <View className="flex-1 min-w-0">
+                <Text className="text-base font-bold text-gray-900">Order #{item.id}</Text>
+                <Text className="text-xs text-gray-500 mt-1">Placed on {formatDate(item.createdAt)}</Text>
+              </View>
+              <View className={`px-3 py-1 rounded-full border ${chip.bg} ${chip.border}`}>
+                <Text className={`text-xs font-bold ${chip.text}`}>{statusDisplay}</Text>
+              </View>
+            </View>
+
+            <View className="mt-3 p-3 rounded-xl border border-emerald-100 bg-emerald-50/60">
+              {etaExpired ? (
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push({
+                      pathname: '/support',
+                      params: { orderId: String(item.id) },
+                    })
+                  }
+                  className="active:opacity-80"
+                >
+                  <Text className="text-sm font-semibold text-emerald-900 underline">{etaText}</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text className="text-sm font-semibold text-emerald-900">{etaText}</Text>
+              )}
+              {!isCancelled && (
+                <View className="mt-2 gap-1.5">
+                  {ORDER_PROGRESS_STEPS.map((step, idx) => {
+                    const done = idx <= progress;
+                    return (
+                      <View key={step.key} className="flex-row items-center gap-2">
+                        <View className={`w-2.5 h-2.5 rounded-full ${done ? 'bg-emerald-700' : 'bg-gray-300'}`} />
+                        <Text className={`text-xs ${done ? 'text-emerald-900 font-semibold' : 'text-gray-500'}`}>
+                          {step.label}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+
+            {primaryItem && (
+              <View className="mt-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
+                <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Item summary
+                </Text>
+                <View className="flex-row items-center gap-3">
+                  <Image
+                    source={{ uri: primaryItem.imageUrl || 'https://via.placeholder.com/56' }}
+                    className="w-14 h-14 rounded-lg bg-gray-100"
+                    resizeMode="cover"
+                  />
+                  <View className="flex-1">
+                    <Text className="text-sm font-semibold text-gray-900" numberOfLines={2}>
+                      {primaryItem.name}
+                    </Text>
+                    <Text className="text-xs text-gray-600 mt-0.5">
+                      Qty {primaryItem.quantity} · ₹{primaryItem.price.toFixed(0)}
+                    </Text>
+                    {remainingCount > 0 && (
+                      <Text className="text-xs text-emerald-700 mt-1">+{remainingCount} more item(s)</Text>
+                    )}
                   </View>
                 </View>
-                <View className={`px-3 py-1 rounded-full border ${chip.bg} ${chip.border}`}>
-                  <Text className={`text-xs font-bold ${chip.text}`}>{statusDisplay}</Text>
-                </View>
               </View>
+            )}
 
-              {itemCount > 0 && (
-                <View className="mt-3 pt-3 border-t border-emerald-50">
-                  <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                    {itemCount} {itemCount === 1 ? 'item' : 'items'}
-                  </Text>
-                  {item.items.slice(0, 4).map(renderOrderItem)}
-                  {itemCount > 4 && (
-                    <Text className="text-xs text-emerald-700 font-medium py-1">
-                      +{itemCount - 4} more in this order
-                    </Text>
-                  )}
-                </View>
-              )}
-
-              {(item.addressLine || item.city) && (
-                <View className="mt-3 flex-row items-start gap-2 p-3 rounded-xl bg-emerald-50/80">
-                  <MaterialIcons name="location-on" size={18} color={UI.color.primary} />
-                  <Text className="text-xs text-gray-700 flex-1 leading-5" numberOfLines={3}>
-                    {[item.addressLine, item.city, item.state, item.pincode].filter(Boolean).join(', ')}
-                  </Text>
-                </View>
-              )}
-
-              <View className="flex-row justify-between items-center mt-4 pt-3 border-t border-emerald-50">
-                <Text className="text-sm font-semibold text-gray-600">Total</Text>
-                <Text className="text-xl font-bold" style={{ color: UI.color.primaryDark }}>
-                  ₹{item.amount.toFixed(0)}
+            {(item.addressLine || item.city) && (
+              <View className="mt-3 flex-row items-start gap-2 p-3 rounded-xl bg-white border border-gray-200">
+                <MaterialIcons name="location-on" size={18} color={UI.color.primary} />
+                <Text className="text-xs text-gray-700 flex-1 leading-5" numberOfLines={3}>
+                  {[item.addressLine, item.city, item.state, item.pincode].filter(Boolean).join(', ')}
                 </Text>
               </View>
+            )}
 
-              {(item.razorpayPaymentId || item.razorpayOrderId) && (
-                <Text className="text-[10px] text-gray-400 mt-2" numberOfLines={1}>
-                  Ref: {item.razorpayPaymentId || item.razorpayOrderId}
+            <View className="flex-row justify-between items-center mt-4 pt-3 border-t border-gray-200">
+              <Text className="text-sm font-semibold text-gray-600">Order total</Text>
+              <Text className="text-xl font-bold text-gray-900">₹{item.amount.toFixed(0)}</Text>
+            </View>
+
+            {relatedKeywords.length > 0 && (
+              <View className="mt-3">
+                <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Buy it again
                 </Text>
-              )}
+                <View className="flex-row flex-wrap gap-2">
+                  {relatedKeywords.map((name, i) => (
+                    <TouchableOpacity
+                      key={`${item.id}-${name}-${i}`}
+                      className="px-3 py-2 rounded-full bg-white border border-gray-300 active:opacity-90"
+                      onPress={() => {
+                        submitSearchAndGoToShop(name);
+                        router.push('/(tabs)/shop');
+                      }}>
+                      <Text className="text-xs font-medium text-gray-800">{name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
 
+            {(item.razorpayPaymentId || item.razorpayOrderId) && (
+              <Text className="text-[10px] text-gray-400 mt-2" numberOfLines={1}>
+                Ref: {item.razorpayPaymentId || item.razorpayOrderId}
+              </Text>
+            )}
+
+            <View className="mt-4 flex-row gap-2">
               <TouchableOpacity
-                className="flex-row items-center justify-center gap-2 mt-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100 active:opacity-90"
+                className="flex-1 flex-row items-center justify-center gap-2 py-3 rounded-xl bg-white border border-gray-300 active:opacity-90"
                 onPress={() =>
                   router.push({ pathname: '/order-success', params: { orderId: String(item.id) } })
                 }>
-                <Text className="text-sm font-semibold" style={{ color: UI.color.primaryDark }}>
-                  View order details
-                </Text>
-                <MaterialIcons name="arrow-forward" size={18} color={UI.color.primaryDark} />
+                <Text className="text-sm font-semibold text-gray-800">Order details</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 flex-row items-center justify-center gap-2 py-3 rounded-xl bg-emerald-700 active:opacity-90"
+                onPress={() => router.push('/(tabs)/shop')}>
+                <Text className="text-sm font-semibold text-white">Shop more</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -320,6 +437,35 @@ export default function OrdersScreen() {
     </View>
   );
 
+  const ordersLoadingSkeleton = (
+    <View className="flex-1 px-4 pt-3">
+      {[0, 1, 2].map((idx) => (
+        <View
+          key={`order-skeleton-${idx}`}
+          className="bg-white rounded-2xl border border-gray-200 p-4 mb-4"
+          style={{
+            shadowColor: '#0f172a',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.06,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
+        >
+          <View className="flex-row justify-between items-start mb-3">
+            <View className="flex-1">
+              <View className="h-4 w-28 rounded bg-gray-200 mb-2" />
+              <View className="h-3 w-36 rounded bg-gray-200" />
+            </View>
+            <View className="h-6 w-20 rounded-full bg-gray-200" />
+          </View>
+          <View className="h-16 rounded-xl bg-gray-100 mb-3" />
+          <View className="h-20 rounded-xl bg-gray-100 mb-3" />
+          <View className="h-10 rounded-xl bg-gray-100" />
+        </View>
+      ))}
+    </View>
+  );
+
   if (!token) {
     return (
       <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: UI.color.canvas }}>
@@ -349,7 +495,7 @@ export default function OrdersScreen() {
     return (
       <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: UI.color.canvas }}>
         {headerBar}
-        <OrderListSkeleton />
+        {ordersLoadingSkeleton}
       </SafeAreaView>
     );
   }

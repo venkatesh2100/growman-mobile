@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSignupDraft } from './SignupDraftContext';
+import { useSignupDraft } from '../../../lib/signupDraftContext';
 
 export default function SignupPasswordStep() {
   const insets = useSafeAreaInsets();

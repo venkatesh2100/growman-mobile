@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { showAlert } from '../../../components/Alert';
 import { apiFetch } from '../../../lib/api';
-import { useSignupDraft } from './SignupDraftContext';
+import { useSignupDraft } from '../../../lib/signupDraftContext';
 
 const phoneOk = (p: string) => /^[6-9][0-9]{9}$/.test(p);
 

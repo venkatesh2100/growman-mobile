@@ -16,7 +16,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { showAlert } from '../../../components/Alert';
 import { apiFetch } from '../../../lib/api';
 import { useAuthStore } from '../../../store/authStore';
-import { useSignupDraft } from './SignupDraftContext';
+import { useSignupDraft } from '../../../lib/signupDraftContext';
 
 export default function SignupVerifyStep() {
   const insets = useSafeAreaInsets();

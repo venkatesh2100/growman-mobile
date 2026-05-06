@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { showAlert } from '../../../components/Alert';
 import { apiFetch } from '../../../lib/api';
-import { useSignupDraft } from './SignupDraftContext';
+import { useSignupDraft } from '../../../lib/signupDraftContext';
 
 const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 

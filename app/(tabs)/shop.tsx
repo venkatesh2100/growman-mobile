@@ -14,6 +14,7 @@ import {
   RefreshControl,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -25,6 +26,7 @@ import { showConfirm } from '../../components/Alert';
 import { toast } from '../../components/Toast';
 import { apiFetch, identifyPlant, searchProducts } from '../../lib/api';
 import { Product } from '../../lib/types';
+import { useAuthStore } from '../../store/authStore';
 import { useSearchStore } from '../../store/searchStore';
 
 type SortBy = 'name' | 'price' | 'newest';
@@ -65,6 +67,14 @@ export default function ShopScreen() {
   const [scanning, setScanning] = useState(false);
   const [listening, setListening] = useState(false);
   const voiceResultRef = useRef<string | null>(null);
+  const { token, isAuthenticated, checkAuth } = useAuthStore();
+  const [requestName, setRequestName] = useState('');
+  const [requestDetails, setRequestDetails] = useState('');
+  const [requesterName, setRequesterName] = useState('');
+  const [requesterEmail, setRequesterEmail] = useState('');
+  const [requesterPhone, setRequesterPhone] = useState('');
+  const [adminNotes, setAdminNotes] = useState('');
+  const [requestSubmitting, setRequestSubmitting] = useState(false);
 
   useSpeechRecognitionEvent('result', (event) => {
     const transcript = event.results[0]?.transcript?.trim();
@@ -198,6 +208,35 @@ export default function ShopScreen() {
   }, [pendingSearchQuery]);
 
   useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    setRequestName(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await apiFetch('/auth/me');
+        if (!response.ok || cancelled) return;
+        const user = await response.json();
+        if (cancelled) return;
+        setRequesterName(user?.name || '');
+        setRequesterEmail(user?.email || '');
+        setRequesterPhone(user?.phone || '');
+      } catch {
+        // no-op
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, token]);
+
+  useEffect(() => {
     const t = setTimeout(() => {
       (async () => {
         setLoading(true);
@@ -223,6 +262,41 @@ export default function ShopScreen() {
   const handleSortChange = (newSort: SortBy) => {
     setSortBy(newSort);
     setShowFilters(false);
+  };
+
+  const submitProductRequest = async () => {
+    if (!requestName.trim()) {
+      toast('Requested product name is required.', 'error');
+      return;
+    }
+    setRequestSubmitting(true);
+    try {
+      const response = await apiFetch('/requested-products', {
+        method: 'POST',
+        body: JSON.stringify({
+          productName: requestName.trim(),
+          details: requestDetails.trim() || `Mobile shop search: ${searchQuery || requestName}`,
+          source: 'shop_mobile',
+          requesterName: requesterName.trim(),
+          requesterEmail: requesterEmail.trim(),
+          requesterPhone: requesterPhone.trim(),
+          adminNotes: adminNotes.trim(),
+        }),
+      });
+      if (!response.ok) throw new Error('request failed');
+      toast('Product request submitted successfully.', 'success');
+      setRequestDetails('');
+      setAdminNotes('');
+      if (!isAuthenticated) {
+        setRequesterName('');
+        setRequesterEmail('');
+        setRequesterPhone('');
+      }
+    } catch {
+      toast('Could not submit product request. Try again.', 'error');
+    } finally {
+      setRequestSubmitting(false);
+    }
   };
 
   const identifyAndSearch = async (uri: string) => {
@@ -484,22 +558,92 @@ export default function ShopScreen() {
           <ProductGridSkeleton count={6} />
         </View>
       ) : displayedProducts.length === 0 ? (
-        <View className="flex-1 justify-center items-center px-8" style={{ marginTop: 24 }}>
-          <MaterialIcons name="local-florist" size={56} color="#BBD4C7" />
-          <Text className="text-lg font-semibold text-emerald-950 mt-4 text-center">No plants match</Text>
-          <Text className="text-sm text-emerald-800/70 mt-2 text-center">
-            {searchQuery ? 'Try another search or clear filters' : 'Try a different category or tag'}
-          </Text>
-          <TouchableOpacity
-            className="mt-6 px-6 py-3 rounded-2xl bg-emerald-800"
-            onPress={() => {
-              setSearchQuery('');
-              setActiveTag(null);
-              setActiveCategorySlug(null);
-            }}>
-            <Text className="text-white font-semibold">Reset filters</Text>
-          </TouchableOpacity>
-        </View>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: insets.bottom + 24 }}>
+          <View className="items-center">
+            <MaterialIcons name="local-florist" size={56} color="#BBD4C7" />
+            <Text className="text-lg font-semibold text-emerald-950 mt-4 text-center">No plants match</Text>
+            <Text className="text-sm text-emerald-800/70 mt-2 text-center">
+              {searchQuery ? 'Try another search or clear filters' : 'Try a different category or tag'}
+            </Text>
+            <TouchableOpacity
+              className="mt-6 px-6 py-3 rounded-2xl bg-emerald-800"
+              onPress={() => {
+                setSearchQuery('');
+                setActiveTag(null);
+                setActiveCategorySlug(null);
+              }}>
+              <Text className="text-white font-semibold">Reset filters</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="mt-8 rounded-2xl  border-emerald-200 bg-emerald-50 p-4">
+            <Text className="text-sm font-semibold text-emerald-900 mb-2">Request to add product</Text>
+            <View className="gap-2">
+              {/* <View className="rounded-xl border border-emerald-100 bg-white px-3 py-2.5">
+                <Text className="text-sm text-gray-900">{requestName || searchQuery || ''}</Text>
+              </View> */}
+              <TextInput
+                className="text-sm text-gray-900 px-3 py-2.5 rounded-xl border border-emerald-100 bg-white"
+                placeholder="Requested product name"
+                placeholderTextColor="#9CA3AF"
+                value={requestName}
+                onChangeText={setRequestName}
+              />
+              <TextInput
+                className="text-sm text-gray-900 px-3 py-2.5 rounded-xl border border-emerald-100 bg-white"
+                placeholder="Details (brand, size, use-case)"
+                placeholderTextColor="#9CA3AF"
+                value={requestDetails}
+                onChangeText={setRequestDetails}
+              />
+              {!isAuthenticated && (
+                <>
+                  <TextInput
+                    className="text-sm text-gray-900 px-3 py-2.5 rounded-xl border border-emerald-100 bg-white"
+                    placeholder="Your name"
+                    placeholderTextColor="#9CA3AF"
+                    value={requesterName}
+                    onChangeText={setRequesterName}
+                  />
+                  <TextInput
+                    className="text-sm text-gray-900 px-3 py-2.5 rounded-xl border border-emerald-100 bg-white"
+                    placeholder="Your email"
+                    placeholderTextColor="#9CA3AF"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    value={requesterEmail}
+                    onChangeText={setRequesterEmail}
+                  />
+                  <TextInput
+                    className="text-sm text-gray-900 px-3 py-2.5 rounded-xl border border-emerald-100 bg-white"
+                    placeholder="Your phone"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="phone-pad"
+                    value={requesterPhone}
+                    onChangeText={setRequesterPhone}
+                  />
+                </>
+              )}
+              <TextInput
+                className="text-sm text-gray-900 px-3 py-2.5 rounded-xl border border-emerald-100 bg-white"
+                placeholder="Admin notes (priority, city, quantity)"
+                placeholderTextColor="#9CA3AF"
+                value={adminNotes}
+                onChangeText={setAdminNotes}
+              />
+              <TouchableOpacity
+                onPress={submitProductRequest}
+                disabled={requestSubmitting}
+                className={`flex-row items-center justify-center py-3 rounded-2xl ${
+                  requestSubmitting ? 'bg-gray-200' : 'bg-emerald-700'
+                }`}>
+                <Text className={`text-sm font-semibold ${requestSubmitting ? 'text-gray-400' : 'text-white'}`}>
+                  {requestSubmitting ? 'Submitting...' : 'Request to add product'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
       ) : (
         <FlatList
           data={displayedProducts}
