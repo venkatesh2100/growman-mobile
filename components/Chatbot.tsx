@@ -17,6 +17,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { identifyPlant } from '../lib/api';
 import { sendChatMessage, type ChatProductRec } from '../lib/chatApi';
 import { UI } from '../lib/ui';
@@ -41,10 +42,16 @@ const DEFAULT_MESSAGE: Message = {
 
 export default function Chatbot() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    setChatbotOpener(() => setIsOpen(true));
+    setChatbotOpener((message?: string) => {
+      setIsOpen(true);
+      if (message && message.trim()) {
+        setInput(message.trim());
+      }
+    });
     return () => setChatbotOpener(null);
   }, []);
   const [messages, setMessages] = useState<Message[]>([DEFAULT_MESSAGE]);
@@ -161,7 +168,7 @@ export default function Chatbot() {
             await identifyAndSendToChat(result.assets[0].uri);
           }
         },
-      },
+    },
     ]);
   };
 
@@ -255,9 +262,17 @@ export default function Chatbot() {
         visible={isOpen}
         animationType="fade"
         transparent
+        statusBarTranslucent
+        navigationBarTranslucent
         onRequestClose={() => setIsOpen(false)}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View className="flex-1 bg-black/45">
+          <View className="flex-1 bg-white">
+            {/* Keep nav button area white on 3-button Android, while dimming content above it */}
+            <View
+              pointerEvents="none"
+              className="absolute left-0 right-0 top-0 bg-black/45"
+              style={{ bottom: insets.bottom }}
+            />
             <View className="flex-1 bg-white rounded-t-3xl mt-[88px] border border-emerald-100 overflow-hidden">
               <View
                 className="flex-row justify-between items-center px-4 py-3 border-b border-emerald-100"
@@ -282,7 +297,7 @@ export default function Chatbot() {
                 ref={scrollViewRef}
                 className="flex-1"
                 style={{ backgroundColor: UI.color.canvasAlt }}
-                contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+                contentContainerStyle={{ padding: 16, paddingBottom: 24 + insets.bottom }}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
                 showsVerticalScrollIndicator={false}>
@@ -299,7 +314,7 @@ export default function Chatbot() {
 
               <View
                 className="flex-row px-3 py-3 border-t border-emerald-100 bg-white gap-2 items-end"
-                style={{ paddingBottom: 12 + keyboardHeight }}>
+                style={{ paddingBottom: keyboardHeight > 0 ? 12 + keyboardHeight : 12 + insets.bottom }}>
                 <TouchableOpacity
                   onPress={handleScanPlant}
                   disabled={scanning}

@@ -1,10 +1,10 @@
 /** Wired by `<Chatbot />` on mount; tab bar calls `openChatbot()`. */
-let openFn: (() => void) | null = null;
+let openFn: ((message?: string) => void) | null = null;
 
-export function setChatbotOpener(fn: (() => void) | null) {
+export function setChatbotOpener(fn: ((message?: string) => void) | null) {
   openFn = fn;
 }
 
-export function openChatbot() {
-  openFn?.();
+export function openChatbot(message?: string) {
+  openFn?.(message);
 }

@@ -20,7 +20,7 @@ import {
 } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { identifyPlant } from '../lib/api';
+import { apiFetch, identifyPlant } from '../lib/api';
 import { sendChatMessage, type ChatProductRec } from '../lib/chatApi';
 import { UI } from '../lib/ui';
 import { useSearchStore } from '../store/searchStore';
@@ -49,7 +49,6 @@ export default function SearchModal() {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const voiceResultRef = useRef<string | null>(null);
-
   const { showSearchModal, closeSearch, submitSearchAndGoToShop, initialSearchQuery } = useSearchStore();
   const [query, setQuery] = useState(initialSearchQuery);
   const [scanning, setScanning] = useState(false);
@@ -334,7 +333,6 @@ export default function SearchModal() {
               </Text>
             </TouchableOpacity>
           </View>
-
           <ScrollView
             ref={scrollRef}
             className="flex-1"
