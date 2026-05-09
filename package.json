@@ -8,7 +8,11 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+  "version:patch": "npm version patch && react-native-version",
+  "version:minor": "npm version minor && react-native-version",
+  "version:major": "npm version major && react-native-version",
+  "build:android": "npm run version:patch && cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
