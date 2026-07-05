@@ -1,218 +1,335 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { toast } from '../../components/Toast';
-import { apiFetch } from '../../lib/api';
-import { User } from '../../lib/types';
 import { showConfirm } from '../../components/Alert';
-import { useAuthStore } from '../../store/authStore';
+import { apiFetch } from '../../lib/api';
+import { openChatbot } from '../../lib/chatbotOpener';
+import { User } from '../../lib/types';
 import { UI } from '../../lib/ui';
+import { useAuthStore } from '../../store/authStore';
+
+type MenuItem = {
+  icon: React.ComponentProps<typeof MaterialIcons>['name'];
+  label: string;
+  hint?: string;
+  onPress: () => void;
+};
+
+function getInitials(name?: string) {
+  if (!name?.trim()) return 'G';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ''}${parts[parts.length - 1][0] ?? ''}`.toUpperCase();
+}
+
+function MenuGroup({ title, items }: { title: string; items: MenuItem[] }) {
+  return (
+    <View className="mb-5 px-4">
+      <Text className="text-[15px] font-semibold mb-2.5 px-1" style={{ color: UI.color.ink }}>
+        {title}
+      </Text>
+      <View
+        className="rounded-2xl overflow-hidden bg-white"
+        style={{ borderWidth: 1, borderColor: UI.color.border }}>
+        {items.map((item, index) => (
+          <TouchableOpacity
+            key={item.label}
+            activeOpacity={0.75}
+            className="flex-row items-center px-4 py-3.5"
+            style={index < items.length - 1 ? { borderBottomWidth: 1, borderBottomColor: UI.color.border } : undefined}
+            onPress={item.onPress}>
+            <View
+              className="w-9 h-9 rounded-xl items-center justify-center mr-3"
+              style={{ backgroundColor: UI.color.canvas }}>
+              <MaterialIcons name={item.icon} size={20} color={UI.color.primaryDark} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-[15px] font-medium text-gray-900">{item.label}</Text>
+              {item.hint ? <Text className="text-xs text-gray-500 mt-0.5">{item.hint}</Text> : null}
+            </View>
+            <MaterialIcons name="chevron-right" size={22} color="#C4C9D1" />
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ShortcutTile({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof MaterialIcons>['name'];
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      className="flex-1 rounded-2xl bg-white px-3 py-4"
+      style={{ borderWidth: 1, borderColor: UI.color.border }}>
+      <View
+        className="w-10 h-10 rounded-xl items-center justify-center mb-2.5"
+        style={{ backgroundColor: UI.color.canvas }}>
+        <MaterialIcons name={icon} size={22} color={UI.color.primary} />
+      </View>
+      <Text className="text-[13px] font-semibold text-gray-900">{label}</Text>
+    </TouchableOpacity>
+  );
+}
 
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();
   const { clearAuth, token } = useAuthStore();
   const [user, setUser] = useState<User | null>(null);
+  const [loadingUser, setLoadingUser] = useState(false);
 
-  useEffect(() => {
+  const loadUser = useCallback(async () => {
     if (!token) {
       setUser(null);
       return;
     }
-    let cancelled = false;
-    (async () => {
-      try {
-        const response = await apiFetch('/auth/me');
-        if (cancelled || !response.ok) return;
-        const data = await response.json();
-        if (!cancelled) setUser(data);
-      } catch (error) {
-        console.error('Error loading user:', error);
+    setLoadingUser(true);
+    try {
+      const response = await apiFetch('/auth/me');
+      if (response.ok) {
+        setUser(await response.json());
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    } catch (error) {
+      console.error('Error loading user:', error);
+    } finally {
+      setLoadingUser(false);
+    }
   }, [token]);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadUser();
+    }, [loadUser])
+  );
+
   const handleLogout = () => {
-    showConfirm('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: () => {
-          clearAuth();
-          router.replace('/(auth)');
+    showConfirm(
+      'Sign out of Growman?',
+      'You’ll need to sign in again to view orders, wishlist, and saved addresses on this device.',
+      [
+        { text: 'Stay signed in', style: 'cancel' },
+        {
+          text: 'Log out',
+          style: 'destructive',
+          onPress: () => {
+            clearAuth();
+            router.replace('/(auth)');
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
+
+  const displayName = user?.name?.trim() || 'Your account';
+  const contactLine = [user?.email, user?.phone].filter(Boolean).join(' · ');
 
   return (
     <View className="flex-1" style={{ backgroundColor: UI.color.canvasAlt }}>
-      <View
-        style={{ height: insets.top, backgroundColor: UI.color.canvasAlt }}
-        className="absolute top-0 left-0 right-0 z-10"
-      />
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 32 }}>
-        <Animated.View entering={FadeInDown.duration(400)} className="px-6 pt-6 items-center mb-6">
-          <View className="relative mb-4">
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
+        {token ? (
+          <LinearGradient
+            colors={['#ecfdf5', '#d1fae5', '#a7f3d0']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              paddingTop: insets.top + 16,
+              paddingHorizontal: 16,
+              paddingBottom: 28,
+              borderBottomLeftRadius: 28,
+              borderBottomRightRadius: 28,
+            }}>
+            <Text className="text-sm font-medium mb-4" style={{ color: UI.color.primaryDark }}>
+              Account
+            </Text>
+
+            <View className="flex-row items-center">
+              <View
+                className="w-[68px] h-[68px] rounded-2xl items-center justify-center mr-4"
+                style={{ backgroundColor: UI.color.primary }}>
+                {loadingUser && !user ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-2xl font-bold text-white">{getInitials(user?.name)}</Text>
+                )}
+              </View>
+              <View className="flex-1">
+                <Text className="text-xl font-bold mb-1" style={{ color: UI.color.ink }} numberOfLines={1}>
+                  {displayName}
+                </Text>
+                {contactLine ? (
+                  <Text className="text-sm text-gray-600" numberOfLines={2}>
+                    {contactLine}
+                  </Text>
+                ) : loadingUser ? (
+                  <Text className="text-sm text-gray-500">Loading profile…</Text>
+                ) : null}
+              </View>
+            </View>
+          </LinearGradient>
+        ) : (
+          <View style={{ paddingTop: insets.top + 16, paddingHorizontal: 16, paddingBottom: 8 }}>
+            <Text className="text-sm font-medium mb-3" style={{ color: UI.color.primaryDark }}>
+              Account
+            </Text>
             <View
-              className="w-24 h-24 rounded-full justify-center items-center border-2 border-emerald-100"
-              style={{ backgroundColor: 'rgba(5, 150, 105, 0.12)' }}>
-              <MaterialIcons name="person" size={48} color={UI.color.primary} />
+              className="rounded-3xl bg-white p-5"
+              style={{ borderWidth: 1, borderColor: UI.color.border }}>
+              <View className="flex-row items-center mb-4">
+                <Image
+                  source={require('../../assets/images/icon.png')}
+                  className="w-14 h-14 rounded-xl mr-4"
+                  resizeMode="cover"
+                />
+                <View className="flex-1">
+                  <Text className="text-lg font-bold text-gray-900">Browse as guest</Text>
+                  <Text className="text-sm text-gray-500 mt-1 leading-5">
+                    Sign in to save wishlist, track orders, and checkout faster.
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                className="rounded-2xl py-3.5 items-center mb-3"
+                style={{ backgroundColor: UI.color.primary }}
+                activeOpacity={0.9}
+                onPress={() => router.push('/(auth)/login')}>
+                <Text className="text-[15px] font-semibold text-white">Sign in</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="rounded-2xl py-3.5 items-center border-2"
+                style={{ borderColor: UI.color.primary }}
+                activeOpacity={0.9}
+                onPress={() => router.push('/(auth)/signup')}>
+                <Text className="text-[15px] font-semibold" style={{ color: UI.color.primaryDark }}>
+                  Create account
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
-          <Text className="text-2xl font-bold text-gray-900 mb-1">
-            {token ? user?.name ?? 'Your account' : 'Guest'}
-          </Text>
-          {token && user?.email ? <Text className="text-base text-gray-600 mb-1">{user.email}</Text> : null}
-          {token && user?.phone ? <Text className="text-sm text-gray-500">{user.phone}</Text> : null}
-          {!token && (
-            <TouchableOpacity
-              className="mt-4 px-8 py-3 rounded-2xl bg-emerald-700 active:opacity-90"
-              onPress={() => router.push('/(auth)/login')}>
-              <Text className="text-base font-semibold text-white">Sign in</Text>
-            </TouchableOpacity>
-          )}
-        </Animated.View>
+        )}
 
-        {token && (
+        <View className="px-4 mt-5 mb-5">
+          <View className="flex-row gap-3">
+            <ShortcutTile icon="shopping-bag" label="Orders" onPress={() => router.push('/orders')} />
+            <ShortcutTile icon="favorite-border" label="Wishlist" onPress={() => router.push('/wishlist')} />
+            <ShortcutTile icon="storefront" label="Shop" onPress={() => router.replace('/(tabs)/shop')} />
+          </View>
+        </View>
+
+        {token ? (
           <>
-            <View className="mb-4 px-4">
-              <Text className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3 px-1">Quick actions</Text>
-              <View className="flex-row justify-between gap-3">
-                <TouchableOpacity
-                  className="flex-1 bg-white rounded-2xl p-4 items-center border border-gray-100 active:opacity-90"
-                  style={{
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 2,
-                  }}
-                  onPress={() => router.push('/orders')}>
-                  <View
-                    className="w-12 h-12 rounded-full justify-center items-center mb-2"
-                    style={{ backgroundColor: 'rgba(5, 150, 105, 0.1)' }}>
-                    <MaterialIcons name="shopping-bag" size={UI.icon.md} color={UI.color.primary} />
-                  </View>
-                  <Text className="text-[13px] font-semibold text-gray-900">Orders</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className="flex-1 bg-white rounded-2xl p-4 items-center border border-gray-100 active:opacity-90"
-                  style={{
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                    elevation: 2,
-                  }}
-                  onPress={() => router.push('/wishlist')}>
-                  <View
-                    className="w-12 h-12 rounded-full justify-center items-center mb-2"
-                    style={{ backgroundColor: 'rgba(5, 150, 105, 0.1)' }}>
-                    <MaterialIcons name="favorite-border" size={UI.icon.md} color={UI.color.primary} />
-                  </View>
-                  <Text className="text-[13px] font-semibold text-gray-900">Wishlist</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className="flex-1 bg-white rounded-2xl p-4 items-center border border-gray-100 active:opacity-90"
-                  onPress={() => toast('Coming soon', 'info')}>
-                  <View
-                    className="w-12 h-12 rounded-full justify-center items-center mb-2"
-                    style={{ backgroundColor: 'rgba(5, 150, 105, 0.1)' }}>
-                    <MaterialIcons name="local-offer" size={UI.icon.md} color={UI.color.primary} />
-                  </View>
-                  <Text className="text-[13px] font-semibold text-gray-900">Offers</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            <MenuGroup
+              title="Your details"
+              items={[
+                {
+                  icon: 'location-on',
+                  label: 'Saved addresses',
+                  hint: 'Delivery locations for checkout',
+                  onPress: () => router.push('/saved-addresses'),
+                },
+                {
+                  icon: 'payment',
+                  label: 'Payment methods',
+                  hint: 'Cards and UPI saved at checkout',
+                  onPress: () => router.push('/payment-methods'),
+                },
+                {
+                  icon: 'notifications-none',
+                  label: 'Notifications',
+                  onPress: () => router.push('/notifications'),
+                },
+              ]}
+            />
 
-            <View className="mb-4 px-4">
-              <Text className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3 px-1">Account</Text>
-              <View className="bg-white rounded-2xl overflow-hidden border border-gray-100">
-                {(
-                  [
-                    { icon: 'shopping-bag' as const, label: 'My orders', path: '/orders' as const },
-                    { icon: 'location-on' as const, label: 'Saved addresses', path: '/saved-addresses' as const },
-                    { icon: 'payment' as const, label: 'Payment methods', path: '/payment-methods' as const },
-                    { icon: 'notifications-none' as const, label: 'Notifications', path: '/notifications' as const },
-                  ] as const
-                ).map((row, idx) => (
-                  <TouchableOpacity
-                    key={row.path}
-                    className={`flex-row justify-between items-center p-4 ${idx < 3 ? 'border-b border-gray-100' : ''}`}
-                    onPress={() => router.push(row.path)}>
-                    <View className="flex-row items-center gap-3 flex-1">
-                      <MaterialIcons name={row.icon} size={UI.icon.lg} color={UI.color.primary} />
-                      <Text className="text-base text-gray-900 font-medium">{row.label}</Text>
-                    </View>
-                    <MaterialIcons name="chevron-right" size={UI.icon.lg} color="#9CA3AF" />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            <MenuGroup
+              title="Help & support"
+              items={[
+                {
+                  icon: 'auto-awesome',
+                  label: 'Ask Dootha',
+                  hint: 'Plant care, orders, and delivery help',
+                  onPress: () => openChatbot('Hi Dootha, I need help with my Growman account.'),
+                },
+                {
+                  icon: 'help-outline',
+                  label: 'Help center',
+                  onPress: () => router.push('/help-center'),
+                },
+                {
+                  icon: 'support-agent',
+                  label: 'Contact support',
+                  onPress: () => router.push('/support'),
+                },
+              ]}
+            />
 
-            <View className="mb-4 px-4">
-              <Text className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3 px-1">Support</Text>
-              <View className="bg-white rounded-2xl overflow-hidden border border-gray-100">
-                {(
-                  [
-                    { icon: 'help-outline' as const, label: 'Help center', path: '/help-center' as const },
-                    { icon: 'privacy-tip' as const, label: 'Privacy policy', path: '/privacy-policy' as const },
-                    { icon: 'description' as const, label: 'Terms & conditions', path: '/terms' as const },
-                  ] as const
-                ).map((row, idx) => (
-                  <TouchableOpacity
-                    key={row.path}
-                    className={`flex-row justify-between items-center p-4 ${idx < 2 ? 'border-b border-gray-100' : ''}`}
-                    onPress={() => router.push(row.path)}>
-                    <View className="flex-row items-center gap-3 flex-1">
-                      <MaterialIcons name={row.icon} size={UI.icon.lg} color={UI.color.primary} />
-                      <Text className="text-base text-gray-900 font-medium">{row.label}</Text>
-                    </View>
-                    <MaterialIcons name="chevron-right" size={UI.icon.lg} color="#9CA3AF" />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            <MenuGroup
+              title="Legal"
+              items={[
+                { icon: 'privacy-tip', label: 'Privacy policy', onPress: () => router.push('/privacy-policy') },
+                { icon: 'description', label: 'Terms & conditions', onPress: () => router.push('/terms') },
+              ]}
+            />
 
-            <View className="px-4 mb-6">
+            <View className="px-4 mt-1 mb-2">
               <TouchableOpacity
-                className="flex-row items-center justify-between bg-white py-4 px-4 rounded-2xl border border-gray-200 active:bg-gray-50"
-                style={{
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.06,
-                  shadowRadius: 6,
-                  elevation: 2,
-                }}
                 onPress={handleLogout}
+                activeOpacity={0.7}
+                className="py-3 items-center"
                 accessibilityRole="button"
                 accessibilityLabel="Log out">
-                <View className="flex-row items-center gap-3">
-                  <View
-                    className="w-10 h-10 rounded-full items-center justify-center"
-                    style={{ backgroundColor: 'rgba(107, 114, 128, 0.12)' }}>
-                    <MaterialIcons name="logout" size={22} color="#4B5563" />
-                  </View>
-                  <View>
-                    <Text className="text-base font-semibold text-gray-900">Log out</Text>
-                    <Text className="text-xs text-gray-500 mt-0.5">Sign out on this device</Text>
-                  </View>
-                </View>
-                <MaterialIcons name="chevron-right" size={22} color="#9CA3AF" />
+                <Text className="text-[15px] font-semibold text-red-600">Log out</Text>
               </TouchableOpacity>
             </View>
           </>
+        ) : (
+          <>
+            <MenuGroup
+              title="Help & support"
+              items={[
+                {
+                  icon: 'auto-awesome',
+                  label: 'Ask Dootha',
+                  hint: 'Browse plants and get care tips',
+                  onPress: () => openChatbot(),
+                },
+                { icon: 'help-outline', label: 'Help center', onPress: () => router.push('/help-center') },
+                { icon: 'support-agent', label: 'Contact support', onPress: () => router.push('/support') },
+              ]}
+            />
+            <MenuGroup
+              title="Legal"
+              items={[
+                { icon: 'privacy-tip', label: 'Privacy policy', onPress: () => router.push('/privacy-policy') },
+                { icon: 'description', label: 'Terms & conditions', onPress: () => router.push('/terms') },
+              ]}
+            />
+          </>
         )}
+
+        <Text className="text-center text-xs text-gray-400 mt-2">Growman · v2.0</Text>
       </ScrollView>
     </View>
   );

@@ -29,7 +29,7 @@ import { Product } from '../../lib/types';
 import { useAuthStore } from '../../store/authStore';
 import { useSearchStore } from '../../store/searchStore';
 
-type SortBy = 'name' | 'price' | 'newest';
+type SortBy = 'name' | 'price' | 'price_desc' | 'newest' | 'relevance';
 
 type CategoryRow = { id: number; name: string; slug: string };
 
@@ -108,6 +108,10 @@ export default function ShopScreen() {
         return sorted.sort((a, b) => a.name.localeCompare(b.name));
       case 'price':
         return sorted.sort((a, b) => a.price - b.price);
+      case 'price_desc':
+        return sorted.sort((a, b) => b.price - a.price);
+      case 'relevance':
+        return sorted;
       default:
         return sorted;
     }
@@ -403,9 +407,10 @@ export default function ShopScreen() {
   }, [searchQuery, activeTag, activeCategorySlug, categories]);
 
   const renderProduct = ({ item, index }: { item: Product; index: number }) => (
-    <View className="w-[48%]">
+    <View className="w-[49%]">
       <ProductCard
         product={item}
+        variant="compact"
         onPress={() => router.push({ pathname: '/product/[id]', params: { id: item.slug.toString() } })}
         index={index}
       />
@@ -555,7 +560,7 @@ export default function ShopScreen() {
 
       {showLoader && !refreshing ? (
         <View className="flex-1 px-2 pt-2">
-          <ProductGridSkeleton count={6} />
+          <ProductGridSkeleton count={6} compact />
         </View>
       ) : displayedProducts.length === 0 ? (
         <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: insets.bottom + 24 }}>
@@ -651,8 +656,8 @@ export default function ShopScreen() {
           keyExtractor={(item) => item.id.toString()}
           numColumns={2}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#059669" />}
-          contentContainerStyle={{ padding: 8, paddingBottom: insets.bottom + 24 }}
-          columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 8 }}
+          contentContainerStyle={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: insets.bottom + 20 }}
+          columnWrapperStyle={{ justifyContent: 'space-between', gap: 8 }}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -669,9 +674,11 @@ export default function ShopScreen() {
             <View className="gap-3">
               {(
                 [
+                  ['relevance', 'Relevance'],
                   ['newest', 'Newest first'],
                   ['name', 'Name (A–Z)'],
                   ['price', 'Price (low to high)'],
+                  ['price_desc', 'Price (high to low)'],
                 ] as const
               ).map(([key, label]) => (
                 <TouchableOpacity

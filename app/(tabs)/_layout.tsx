@@ -1,9 +1,10 @@
-import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { StatusBar  } from 'react-native';
+import { StatusBar } from 'react-native';
+import { AnimatedTabIcon } from '../../components/AnimatedTabIcon';
 import Chatbot from '../../components/Chatbot';
 import SearchModal from '../../components/SearchModal';
 import { openChatbot } from '../../lib/chatbotOpener';
+import { UI } from '../../lib/ui';
 
 export default function TabLayout() {
   return (
@@ -13,34 +14,67 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: '#059669',
-          tabBarInactiveTintColor: '#6B7280',
+          tabBarActiveTintColor: UI.color.primary,
+          tabBarInactiveTintColor: UI.color.muted,
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600',
+            marginTop: -2,
+          },
+          tabBarIconStyle: {
+            marginTop: 2,
+          },
           tabBarStyle: {
-            backgroundColor: '#FFFFFF',
+            backgroundColor: UI.color.surface,
             borderTopWidth: 1,
-            borderTopColor: '#E5E7EB',
+            borderTopColor: UI.color.border,
+            height: 62,
+            paddingTop: 4,
+            paddingBottom: 6,
           },
         }}>
         <Tabs.Screen
           name="home"
           options={{
             title: 'Home',
-            tabBarIcon: ({ color, size }) => <MaterialIcons name="home" size={size} color={color} />,
+            tabBarIcon: ({ focused, color, size }) => (
+              <AnimatedTabIcon
+                focused={focused}
+                color={color}
+                size={size}
+                icon="home"
+                iconFocused="home"
+              />
+            ),
           }}
         />
         <Tabs.Screen
           name="shop"
           options={{
             title: 'Shop',
-            tabBarIcon: ({ color, size }) => <MaterialIcons name="store" size={size} color={color} />,
+            tabBarIcon: ({ focused, color, size }) => (
+              <AnimatedTabIcon
+                focused={focused}
+                color={color}
+                size={size}
+                icon="store"
+                iconFocused="storefront"
+              />
+            ),
           }}
         />
         <Tabs.Screen
           name="cart"
           options={{
             title: 'Cart',
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="shopping-cart" size={size} color={color} />
+            tabBarIcon: ({ focused, color, size }) => (
+              <AnimatedTabIcon
+                focused={focused}
+                color={color}
+                size={size}
+                icon="shopping-bag"
+                iconFocused="shopping-cart"
+              />
             ),
           }}
         />
@@ -54,10 +88,14 @@ export default function TabLayout() {
           }}
           options={{
             title: 'Dootha',
-            tabBarIcon: ({ color, size }) => (
-              // <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-                <MaterialIcons name="auto-awesome" size={size} color={color} />
-              // </View>
+            tabBarIcon: ({ focused, color, size }) => (
+              <AnimatedTabIcon
+                focused={focused}
+                color={color}
+                size={size}
+                icon="auto-awesome"
+                iconFocused="auto-awesome"
+              />
             ),
           }}
         />
@@ -65,7 +103,15 @@ export default function TabLayout() {
           name="account"
           options={{
             title: 'Account',
-            tabBarIcon: ({ color, size }) => <MaterialIcons name="person" size={size} color={color} />,
+            tabBarIcon: ({ focused, color, size }) => (
+              <AnimatedTabIcon
+                focused={focused}
+                color={color}
+                size={size}
+                icon="person-outline"
+                iconFocused="person"
+              />
+            ),
           }}
         />
       </Tabs>

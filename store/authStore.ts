@@ -5,9 +5,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 interface AuthStore {
   token: string | null;
   isAuthenticated: boolean;
+  hasHydrated: boolean;
   setToken: (token: string | null) => void;
   clearAuth: () => void;
   checkAuth: () => void;
+  setHasHydrated: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -15,6 +17,9 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       token: null,
       isAuthenticated: false,
+      hasHydrated: false,
+
+      setHasHydrated: (value) => set({ hasHydrated: value }),
 
       setToken: (token) => {
         set({
@@ -57,10 +62,28 @@ export const useAuthStore = create<AuthStore>()(
       partialize: (state) => ({ token: state.token }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isAuthenticated = !!state.token;
+          const token = typeof state.token === 'string' ? state.token.trim() || null : null;
+          state.token = token;
+          state.isAuthenticated = !!token;
         }
       },
     }
   )
 );
+
+useAuthStore.persist.onFinishHydration(() => {
+  const token = useAuthStore.getState().token;
+  useAuthStore.setState({
+    hasHydrated: true,
+    isAuthenticated: !!token,
+  });
+});
+
+if (useAuthStore.persist.hasHydrated()) {
+  const token = useAuthStore.getState().token;
+  useAuthStore.setState({
+    hasHydrated: true,
+    isAuthenticated: !!token,
+  });
+}
 

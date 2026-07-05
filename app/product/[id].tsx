@@ -21,6 +21,46 @@ import { apiFetch } from '../../lib/api';
 import { Product, ProductSize } from '../../lib/types';
 import { useAuthStore } from '../../store/authStore';
 
+const DESCRIPTION_COLLAPSED_LINES = 3;
+
+function DescriptionReadMore({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [showToggle, setShowToggle] = useState(false);
+  const trimmed = text.trim();
+
+  if (!trimmed) return null;
+
+  return (
+    <View className="mb-4">
+      <Text
+        className="text-sm text-gray-700 leading-relaxed"
+        numberOfLines={expanded ? undefined : DESCRIPTION_COLLAPSED_LINES}
+        onTextLayout={(e) => {
+          if (!expanded) {
+            setShowToggle(e.nativeEvent.lines.length >= DESCRIPTION_COLLAPSED_LINES);
+          }
+        }}>
+        {trimmed}
+      </Text>
+      {showToggle ? (
+        <TouchableOpacity
+          onPress={() => setExpanded((prev) => !prev)}
+          activeOpacity={0.75}
+          className="mt-1.5 flex-row items-center gap-0.5 self-start">
+          <Text className="text-sm font-semibold" style={{ color: UI.color.primary }}>
+            {expanded ? 'Read less' : 'Read more'}
+          </Text>
+          <MaterialIcons
+            name={expanded ? 'expand-less' : 'expand-more'}
+            size={18}
+            color={UI.color.primary}
+          />
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+}
+
 export default function ProductDetailScreen() {
   const { id, size } = useLocalSearchParams<{ id: string; size?: string }>();
   const insets = useSafeAreaInsets();
@@ -289,9 +329,9 @@ export default function ProductDetailScreen() {
           </View>
 
           {/* Description */}
-          <Text className="text-sm text-gray-700 mb-4 leading-relaxed">
-            {product.shortDescription}
-          </Text>
+          {product.shortDescription ? (
+            <DescriptionReadMore text={product.shortDescription} />
+          ) : null}
 
           {/* Size Selector */}
           {product.sizes.length > 0 && selectedSize && (

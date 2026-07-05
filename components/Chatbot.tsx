@@ -19,7 +19,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { identifyPlant } from '../lib/api';
-import { sendChatMessage, type ChatProductRec } from '../lib/chatApi';
+import { sendChatMessage, type ChatOrderRec, type ChatProductRec } from '../lib/chatApi';
 import { UI } from '../lib/ui';
 import { showAlert, showConfirm } from './Alert';
 import { toast } from './Toast';
@@ -31,6 +31,7 @@ interface Message {
   role: 'user' | 'dootha';
   content: string;
   products?: ChatProductRec[];
+  orders?: ChatOrderRec[];
 }
 
 const DEFAULT_MESSAGE: Message = {
@@ -39,6 +40,18 @@ const DEFAULT_MESSAGE: Message = {
   content:
     "Hi! I'm **Dootha**, your Growman plant assistant. Ask about care, pests, light, or watering — I can suggest products from our store too.",
 };
+
+const PRODUCT_CARD_WIDTH = 112;
+const PRODUCT_IMAGE_HEIGHT = 92;
+const PRODUCT_ROW_HEIGHT = 168;
+
+function orderStatusColors(status: string) {
+  const s = status.toLowerCase();
+  if (s.includes('delivered')) return { bg: '#DCFCE7', text: '#166534' };
+  if (s.includes('ship') || s.includes('delivery')) return { bg: '#DBEAFE', text: '#1E40AF' };
+  if (s.includes('pending')) return { bg: '#FEE2E2', text: '#991B1B' };
+  return { bg: '#FEF3C7', text: '#92400E' };
+}
 
 export default function Chatbot() {
   const router = useRouter();
@@ -105,13 +118,14 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      const { response, products } = await sendChatMessage(userMessage.content, prior);
+      const { response, products, orders } = await sendChatMessage(userMessage.content, prior);
 
       const doothaMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'dootha',
         content: response,
         products: products.length > 0 ? products : undefined,
+        orders: orders.length > 0 ? orders : undefined,
       };
 
       setMessages((prev) => [...prev, doothaMessage]);
@@ -217,40 +231,96 @@ export default function Chatbot() {
           ) : (
             <MarkdownRenderer content={message.content} />
           )}
-          {message.products && message.products.length > 0 && (
-            <View className="mt-3">
-              <Text className="text-xs font-semibold text-emerald-800 mb-2">Suggested for you</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-                {message.products.map((product) => (
-                  <Pressable
-                    key={product.id}
-                    onPress={() => openProduct(product)}
-                    className="w-[124px] rounded-2xl overflow-hidden bg-emerald-50/80 border border-emerald-100 active:opacity-90">
-                    {product.imageUrl ? (
-                      <Image
-                        source={{ uri: product.imageUrl }}
-                        className="w-full h-[88px] bg-gray-100"
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View className="w-full h-[88px] bg-emerald-100 items-center justify-center">
-                        <MaterialIcons name="eco" size={28} color={UI.color.primary} />
-                      </View>
-                    )}
-                    <View className="p-2">
-                      <Text className="text-[11px] font-semibold text-emerald-950" numberOfLines={2}>
-                        {product.name}
-                      </Text>
-                      <Text className="text-xs font-bold mt-0.5" style={{ color: UI.color.primary }}>
-                        ₹{Math.round(product.price)}
-                      </Text>
-                    </View>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
-          )}
         </View>
+        {!isUser && message.orders && message.orders.length > 0 && (
+          <View className="mt-2 self-stretch gap-2">
+            {message.orders.map((order) => {
+              const badge = orderStatusColors(order.status);
+              return (
+                <Pressable
+                  key={order.id}
+                  onPress={() => {
+                    router.push('/orders');
+                    setIsOpen(false);
+                  }}
+                  className="flex-row overflow-hidden rounded-2xl border border-emerald-100 bg-white active:opacity-90">
+                  {order.imageUrl ? (
+                    <Image
+                      source={{ uri: order.imageUrl }}
+                      style={{ width: 76, height: 76, backgroundColor: '#F3F4F6' }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={{ width: 76, height: 76 }} className="items-center justify-center bg-emerald-50">
+                      <MaterialIcons name="local-shipping" size={28} color={UI.color.primary} />
+                    </View>
+                  )}
+                  <View className="flex-1 justify-center px-3 py-2">
+                    <View className="flex-row items-center justify-between gap-2">
+                      <Text className="text-sm font-bold text-emerald-950">Order #{order.id}</Text>
+                      <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: badge.bg }}>
+                        <Text style={{ color: badge.text, fontSize: 10, fontWeight: '700' }}>{order.status}</Text>
+                      </View>
+                    </View>
+                    <Text className="mt-1 text-xs leading-4 text-gray-600" numberOfLines={2}>
+                      {order.itemPreview}
+                    </Text>
+                    <Text className="mt-1 text-xs font-bold" style={{ color: UI.color.primary }}>
+                      ₹{Math.round(order.amount)} · {order.createdAt}
+                      {order.expectedDeliveryDate ? ` · ETA ${order.expectedDeliveryDate}` : ''}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+            <Pressable onPress={() => { router.push('/orders'); setIsOpen(false); }} className="py-1">
+              <Text className="text-center text-xs font-semibold" style={{ color: UI.color.primaryDark }}>
+                View all orders →
+              </Text>
+            </Pressable>
+          </View>
+        )}
+        {!isUser && message.products && message.products.length > 0 && (
+          <View className="mt-2 self-stretch">
+            <Text className="text-xs font-semibold text-emerald-800 mb-2">Suggested for you</Text>
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={false}
+              style={{ height: PRODUCT_ROW_HEIGHT }}
+              contentContainerStyle={{ gap: 10, alignItems: 'flex-start' }}>
+              {message.products.map((product) => (
+                <Pressable
+                  key={product.id}
+                  onPress={() => openProduct(product)}
+                  className="rounded-2xl overflow-hidden bg-emerald-50/80 border border-emerald-100 active:opacity-90"
+                  style={{ width: PRODUCT_CARD_WIDTH, height: PRODUCT_ROW_HEIGHT - 4 }}>
+                  {product.imageUrl ? (
+                    <Image
+                      source={{ uri: product.imageUrl }}
+                      style={{ width: PRODUCT_CARD_WIDTH, height: PRODUCT_IMAGE_HEIGHT, backgroundColor: '#F3F4F6' }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View
+                      style={{ width: PRODUCT_CARD_WIDTH, height: PRODUCT_IMAGE_HEIGHT }}
+                      className="bg-emerald-100 items-center justify-center">
+                      <MaterialIcons name="eco" size={24} color={UI.color.primary} />
+                    </View>
+                  )}
+                  <View className="flex-1 justify-center px-2 py-1.5">
+                    <Text className="text-[11px] font-semibold text-emerald-950 leading-[14px]" numberOfLines={2}>
+                      {product.name}
+                    </Text>
+                    <Text className="text-[11px] font-bold mt-0.5" style={{ color: UI.color.primary }}>
+                      ₹{Math.round(product.price)}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
       </Animated.View>
     );
   };

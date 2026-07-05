@@ -1,5 +1,5 @@
-import { Slot, Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Stack } from 'expo-router';
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -9,12 +9,6 @@ import { ToastContainer } from '../components/Toast';
 import './global.css';
 
 export default function RootLayout() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const apply = async () => {
@@ -31,12 +25,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <SafeAreaProvider>
-        {/* Render Slot first so Expo Router mounts the navigator immediately */}
-        {!mounted ? (
-          <Slot />
-        ) : (
-          <Stack screenOptions={{ headerShown: false }} />
-        )}
+        <Stack screenOptions={{ headerShown: false }} />
         <ToastContainer />
         <AlertContainer />
       </SafeAreaProvider>

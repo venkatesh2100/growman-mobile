@@ -1,11 +1,12 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
+import { useFocusEffect, useRouter } from 'expo-router';
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
-import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -16,19 +17,18 @@ import {
   Text,
   TouchableOpacity,
   useWindowDimensions,
-  View,
+  View
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { ProductCardSkeleton } from '../../components/skeletons/ProductCardSkeleton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { showAlert, showConfirm } from '../../components/Alert';
 import ProductCard from '../../components/ProductCard';
+import { ProductCardSkeleton } from '../../components/skeletons/ProductCardSkeleton';
 import { toast } from '../../components/Toast';
 import { apiFetch, identifyPlant } from '../../lib/api';
 import { Product } from '../../lib/types';
-import { showAlert, showConfirm } from '../../components/Alert';
-import { useSearchStore } from '../../store/searchStore';
 import { UI } from '../../lib/ui';
+import { useSearchStore } from '../../store/searchStore';
 
 interface Category {
   id: number;

@@ -1,4 +1,5 @@
 import { API_URL } from '../config/env';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../store/authStore';
 
 /**
@@ -10,6 +11,25 @@ export function getApiUrl(): string {
 }
 
 /**
+ * Resolve JWT from zustand or AsyncStorage (handles persist rehydration lag).
+ */
+export async function resolveAuthToken(): Promise<string | null> {
+  const fromStore = useAuthStore.getState().token;
+  if (fromStore) return fromStore;
+
+  try {
+    const stored = await AsyncStorage.getItem('auth-storage');
+    if (stored) {
+      const parsed = JSON.parse(stored) as { state?: { token?: string } };
+      if (parsed.state?.token) return parsed.state.token;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+/**
  * Fetch from the external API
  * Automatically includes Authorization header if token is available
  */
@@ -17,9 +37,7 @@ export async function apiFetch(path: string, options?: RequestInit): Promise<Res
   const apiUrl = getApiUrl();
   const url = path.startsWith('/') ? `${apiUrl}${path}` : `${apiUrl}/${path}`;
 
-  // Get token from store
-  const authStore = useAuthStore.getState();
-  const token = authStore.token;
+  const token = await resolveAuthToken();
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

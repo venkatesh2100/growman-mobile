@@ -7,13 +7,13 @@ import {
   Platform,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { showAlert } from '../../../components/Alert';
+import { showAlert, showWelcomeAlert } from '../../../components/Alert';
+import { OtpInput } from '../../../components/OtpInput';
 import { apiFetch } from '../../../lib/api';
 import { useAuthStore } from '../../../store/authStore';
 import { useSignupDraft } from '../../../lib/signupDraftContext';
@@ -83,7 +83,7 @@ export default function SignupVerifyStep() {
         setCooldown(60);
       }
       setOtpSent(true);
-      showAlert('Check your inbox', 'We sent a 6-digit code to your email.');
+      // showAlert('Check your inbox', 'We sent a 6-digit code to your email.');
     } catch {
       setError('Check your connection and try again.');
     } finally {
@@ -117,10 +117,11 @@ export default function SignupVerifyStep() {
         return;
       }
       const data = (await res.json()) as { token: string };
+      const firstName = draft.firstName.trim();
       reset();
       setToken(data.token);
-      showAlert('Welcome!', 'Your account is ready.');
       router.replace('/(tabs)/home');
+      setTimeout(() => showWelcomeAlert(firstName || undefined), 450);
     } catch {
       setError('Something went wrong. Try again.');
     } finally {
@@ -213,18 +214,15 @@ export default function SignupVerifyStep() {
             </TouchableOpacity>
           ) : (
             <>
-              <Text className="text-sm text-gray-600 mb-3 text-center">Enter the 6-digit code</Text>
-              <TextInput
-                className="bg-white border border-gray-200 rounded-2xl p-4 text-2xl font-bold tracking-[10px] text-center text-gray-900 mb-6"
-                placeholder="000000"
+              <Text className="text-sm text-gray-600 mb-4 text-center">Enter the 6-digit code</Text>
+              <OtpInput
                 value={otp}
-                onChangeText={(t) => {
-                  setOtp(t.replace(/\D/g, '').slice(0, 6));
+                autoFocus={otpSent}
+                hasError={!!error}
+                onChange={(code) => {
+                  setOtp(code);
                   setError(null);
                 }}
-                keyboardType="number-pad"
-                maxLength={6}
-                placeholderTextColor="#D1D5DB"
               />
 
               <TouchableOpacity
