@@ -122,8 +122,8 @@ export default function LoginScreen() {
             <Text className="text-[28px] font-bold text-gray-900 mb-2 text-center">Sign in to your account</Text>
             <Text className="text-sm text-gray-500 mb-8 text-center">
               New here?{' '}
-              <Text className="text-green-600 font-semibold" onPress={() => router.push('/(auth)/signup')}>
-                Create an account
+              <Text className="text-green-600 font-semibold" onPress={() => router.push('/(auth)/phone')}>
+                Continue with mobile
               </Text>
             </Text>
           </Animated.View>
