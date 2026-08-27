@@ -213,17 +213,17 @@ export default function AccountScreen() {
                 className="rounded-2xl py-3.5 items-center mb-3"
                 style={{ backgroundColor: UI.color.primary }}
                 activeOpacity={0.9}
-                onPress={() => router.push('/(auth)/login')}>
-                <Text className="text-[15px] font-semibold text-white">Sign in</Text>
+                onPress={() => router.push('/(auth)/phone')}>
+                <Text className="text-[15px] font-semibold text-white">Continue with mobile</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 className="rounded-2xl py-3.5 items-center border-2"
                 style={{ borderColor: UI.color.primary }}
                 activeOpacity={0.9}
-                onPress={() => router.push('/(auth)/signup')}>
+                onPress={() => router.push('/(auth)')}>
                 <Text className="text-[15px] font-semibold" style={{ color: UI.color.primaryDark }}>
-                  Create account
+                  Other sign-in options
                 </Text>
               </TouchableOpacity>
             </View>

@@ -10,6 +10,9 @@ export default function AuthLayout() {
       <StatusBar style="dark" backgroundColor={AUTH_SCREEN_BG} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: AUTH_SCREEN_BG } }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="phone" />
+        <Stack.Screen name="otp" />
+        <Stack.Screen name="complete-profile" />
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
         <Stack.Screen name="forgot-password" />
@@ -17,5 +20,3 @@ export default function AuthLayout() {
     </>
   );
 }
-
-
