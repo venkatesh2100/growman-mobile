@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { completeProfile } from '../../lib/api';
+import { UI } from '../../lib/ui';
 import { useAuthStore } from '../../store/authStore';
 
 const emailOk = (e: string) => !e || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
@@ -63,18 +64,23 @@ export default function CompleteProfileScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}>
       <ScrollView
-        className="flex-1 bg-gray-50"
+        className="flex-1"
+        style={{ backgroundColor: UI.color.canvasAlt }}
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         automaticallyAdjustKeyboardInsets>
-        <View className="p-6 pt-12">
-          <Text className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">
+        <View className="p-6 pt-8">
+          <Text
+            className="text-xs font-semibold uppercase tracking-wide mb-2"
+            style={{ color: UI.color.primary }}>
             Almost done
           </Text>
           <Animated.View entering={FadeInDown.duration(350)}>
-            <Text className="text-[26px] font-bold text-gray-900 mb-2">Complete your profile</Text>
-            <Text className="text-sm text-gray-500 mb-8">
+            <Text className="text-[28px] mb-2" style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+              Complete your profile
+            </Text>
+            <Text className="text-sm text-gray-500 mb-8 leading-5">
               Just a name so we can personalize your experience. Email is optional — handy for order
               receipts.
             </Text>
@@ -88,7 +94,9 @@ export default function CompleteProfileScreen() {
           )}
 
           <Animated.View entering={FadeInDown.delay(100).duration(400)}>
-            <View className="flex-row items-center bg-white border border-gray-200 rounded-2xl px-4 mb-4 shadow-sm">
+            <View
+              className="flex-row items-center rounded-2xl px-4 mb-4"
+              style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border }}>
               <MaterialIcons name="person" size={22} color="#9CA3AF" style={{ marginRight: 12 }} />
               <TextInput
                 className="flex-1 py-4 text-base text-gray-900"
@@ -108,7 +116,9 @@ export default function CompleteProfileScreen() {
               />
             </View>
 
-            <View className="flex-row items-center bg-white border border-gray-200 rounded-2xl px-4 mb-2 shadow-sm">
+            <View
+              className="flex-row items-center rounded-2xl px-4 mb-2"
+              style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border }}>
               <MaterialIcons name="email" size={22} color="#9CA3AF" style={{ marginRight: 12 }} />
               <TextInput
                 ref={emailRef}
@@ -133,7 +143,8 @@ export default function CompleteProfileScreen() {
             </Text>
 
             <TouchableOpacity
-              className={`bg-green-600 p-4 rounded-2xl items-center justify-center min-h-[52px] ${loading ? 'opacity-60' : ''}`}
+              className={`p-4 rounded-2xl items-center justify-center min-h-[52px] ${loading ? 'opacity-60' : ''}`}
+              style={{ backgroundColor: UI.color.primaryDark }}
               onPress={onContinue}
               disabled={loading}
               activeOpacity={0.9}>

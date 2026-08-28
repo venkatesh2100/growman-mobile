@@ -1,14 +1,36 @@
 import { Tabs } from 'expo-router';
+import { useEffect } from 'react';
 import { StatusBar } from 'react-native';
 import { AnimatedTabIcon } from '../../components/AnimatedTabIcon';
 import Chatbot from '../../components/Chatbot';
 import SearchModal from '../../components/SearchModal';
 import { openChatbot } from '../../lib/chatbotOpener';
 import { UI } from '../../lib/ui';
+import { useAuthStore } from '../../store/authStore';
+import { useUserStore } from '../../store/userStore';
+
+function UserBootstrap() {
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const token = useAuthStore((s) => s.token);
+  const loadUser = useUserStore((s) => s.loadUser);
+  const reset = useUserStore((s) => s.reset);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (token) {
+      void loadUser();
+    } else {
+      reset();
+    }
+  }, [hasHydrated, token, loadUser, reset]);
+
+  return null;
+}
 
 export default function TabLayout() {
   return (
     <>
+      <UserBootstrap />
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" translucent={false} />
       <SearchModal />
       <Tabs
@@ -101,6 +123,12 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="account"
+          listeners={{
+            tabPress: () => {
+              const { token } = useAuthStore.getState();
+              if (token) void useUserStore.getState().loadUser();
+            },
+          }}
           options={{
             title: 'Account',
             tabBarIcon: ({ focused, color, size }) => (

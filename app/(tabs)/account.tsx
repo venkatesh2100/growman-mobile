@@ -1,9 +1,8 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { router } from 'expo-router';
+import React from 'react';
 import {
-  ActivityIndicator,
   Image,
   ScrollView,
   Text,
@@ -12,11 +11,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { showConfirm } from '../../components/Alert';
-import { apiFetch } from '../../lib/api';
+import DeliveryLocationRow from '../../components/DeliveryLocationRow';
 import { openChatbot } from '../../lib/chatbotOpener';
-import { User } from '../../lib/types';
 import { UI } from '../../lib/ui';
 import { useAuthStore } from '../../store/authStore';
+import { formatDeliveryLocation, getFirstName, useUserStore } from '../../store/userStore';
 
 type MenuItem = {
   icon: React.ComponentProps<typeof MaterialIcons>['name'];
@@ -93,32 +92,8 @@ function ShortcutTile({
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();
   const { clearAuth, token } = useAuthStore();
-  const [user, setUser] = useState<User | null>(null);
-  const [loadingUser, setLoadingUser] = useState(false);
-
-  const loadUser = useCallback(async () => {
-    if (!token) {
-      setUser(null);
-      return;
-    }
-    setLoadingUser(true);
-    try {
-      const response = await apiFetch('/auth/me');
-      if (response.ok) {
-        setUser(await response.json());
-      }
-    } catch (error) {
-      console.error('Error loading user:', error);
-    } finally {
-      setLoadingUser(false);
-    }
-  }, [token]);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadUser();
-    }, [loadUser])
-  );
+  const user = useUserStore((s) => s.user);
+  const resetUser = useUserStore((s) => s.reset);
 
   const handleLogout = () => {
     showConfirm(
@@ -131,6 +106,7 @@ export default function AccountScreen() {
           style: 'destructive',
           onPress: () => {
             clearAuth();
+            resetUser();
             router.replace('/(auth)');
           },
         },
@@ -138,8 +114,9 @@ export default function AccountScreen() {
     );
   };
 
-  const displayName = user?.name?.trim() || 'Your account';
+  const displayName = user?.name?.trim() ? getFirstName(user.name) : 'Growman member';
   const contactLine = [user?.email, user?.phone].filter(Boolean).join(' · ');
+  const locationLabel = formatDeliveryLocation(user?.address);
 
   return (
     <View className="flex-1" style={{ backgroundColor: UI.color.canvasAlt }}>
@@ -167,23 +144,25 @@ export default function AccountScreen() {
               <View
                 className="w-[68px] h-[68px] rounded-2xl items-center justify-center mr-4"
                 style={{ backgroundColor: UI.color.primary }}>
-                {loadingUser && !user ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text className="text-2xl font-bold text-white">{getInitials(user?.name)}</Text>
-                )}
+                <Text className="text-2xl font-bold text-white">{getInitials(user?.name)}</Text>
               </View>
               <View className="flex-1">
-                <Text className="text-xl font-bold mb-1" style={{ color: UI.color.ink }} numberOfLines={1}>
+                <Text
+                  className="text-xl mb-1"
+                  style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}
+                  numberOfLines={1}>
                   {displayName}
                 </Text>
                 {contactLine ? (
-                  <Text className="text-sm text-gray-600" numberOfLines={2}>
+                  <Text className="text-sm text-gray-600 mb-1" numberOfLines={2}>
                     {contactLine}
                   </Text>
-                ) : loadingUser ? (
-                  <Text className="text-sm text-gray-500">Loading profile…</Text>
                 ) : null}
+                <DeliveryLocationRow
+                  label={locationLabel}
+                  ink={UI.color.primaryDark}
+                  onPress={() => router.push('/saved-addresses')}
+                />
               </View>
             </View>
           </LinearGradient>
@@ -202,7 +181,9 @@ export default function AccountScreen() {
                   resizeMode="cover"
                 />
                 <View className="flex-1">
-                  <Text className="text-lg font-bold text-gray-900">Browse as guest</Text>
+                  <Text className="text-lg" style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+                    Browse as guest
+                  </Text>
                   <Text className="text-sm text-gray-500 mt-1 leading-5">
                     Sign in to save wishlist, track orders, and checkout faster.
                   </Text>

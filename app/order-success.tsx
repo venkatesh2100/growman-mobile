@@ -132,7 +132,7 @@ export default function OrderSuccessScreen() {
                 </View>
                 <View className="flex-row justify-between mb-2">
                   <Text className="text-sm text-gray-600">Status</Text>
-                  <Text className="text-sm font-semibold text-green-600 capitalize">
+                  <Text className="text-sm font-semibold text-emerald-600 capitalize">
                     {order.paymentStatus === 'paid' || order.status === 'paid'
                       ? 'Paid'
                       : order.status || order.paymentStatus || 'Pending'}

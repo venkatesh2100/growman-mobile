@@ -256,7 +256,11 @@ export default function ProductDetailScreen() {
         <View className="bg-white rounded-2xl p-4 mb-4 border border-emerald-100/80 shadow-sm">
           {/* Title + Wishlist */}
           <View className="flex-row items-start justify-between gap-2 mb-2">
-            <Text className="flex-1 text-2xl font-bold text-gray-900">{product.name}</Text>
+            <Text
+              className="flex-1 text-2xl"
+              style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+              {product.name}
+            </Text>
             <TouchableOpacity
               onPress={toggleWishlist}
               disabled={wishlistLoading}
@@ -292,7 +296,7 @@ export default function ProductDetailScreen() {
             <Text className="text-xs text-gray-400">|</Text>
             <Text
               className={`text-xs font-medium ${
-                (selectedSize?.stock ?? 0) > 0 ? 'text-green-600' : 'text-red-600'
+                (selectedSize?.stock ?? 0) > 0 ? 'text-emerald-600' : 'text-red-600'
               }`}>
               {(selectedSize?.stock ?? 0) > 0 ? 'In Stock' : 'Out of Stock'}
             </Text>
@@ -302,7 +306,7 @@ export default function ProductDetailScreen() {
           {product.brand && (
             <View className="mb-3">
               <Text className="text-xs text-gray-600">
-                Brand: <Text className="font-medium text-green-700">{product.brand.name}</Text>
+                Brand: <Text className="font-medium text-emerald-700">{product.brand.name}</Text>
               </Text>
             </View>
           )}
@@ -310,7 +314,9 @@ export default function ProductDetailScreen() {
           {/* Price */}
           <View className="mb-4">
             <View className="flex-row items-baseline gap-2">
-              <Text className="text-2xl font-bold text-gray-900">
+              <Text
+                className="text-[26px]"
+                style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
                 ₹{selectedSize?.price.toFixed(0) || product.price?.toFixed(0) || '0'}
               </Text>
               {product.mrp &&
@@ -320,7 +326,7 @@ export default function ProductDetailScreen() {
                     <Text className="text-base text-gray-500 line-through">
                       ₹{product.mrp.toFixed(0)}
                     </Text>
-                    <Text className="text-base text-green-600 font-medium">
+                    <Text className="text-base text-emerald-600 font-medium">
                       {Math.round((1 - selectedSize.price / product.mrp) * 100)}% off
                     </Text>
                   </>
@@ -357,7 +363,7 @@ export default function ProductDetailScreen() {
               <View className="gap-2">
                 {product.attributes.map((attr, idx) => (
                   <View key={idx} className="flex-row items-start">
-                    <Text className="text-green-600 mr-2 mt-1">•</Text>
+                    <Text className="text-emerald-600 mr-2 mt-1">•</Text>
                     <Text className="text-sm text-gray-700 flex-1">
                       <Text className="font-medium">{attr.name}:</Text> {attr.value}
                     </Text>
@@ -385,7 +391,7 @@ export default function ProductDetailScreen() {
             <View
               key={i}
               className="flex-1 flex-row items-center p-3 rounded-lg border border-gray-100">
-              <View className="bg-green-50 p-2 rounded-full mr-2">
+              <View className="bg-emerald-50 p-2 rounded-full mr-2">
                 <MaterialIcons name={icon as any} size={18} color="#059669" />
               </View>
               <View className="flex-1">

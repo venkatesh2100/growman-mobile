@@ -8,6 +8,7 @@ import { ActivityIndicator, Platform, Text, TouchableOpacity, View } from 'react
 import { GOOGLE_CLIENT_ID } from '../config/env';
 import { apiFetch } from '../lib/api';
 import { clearGoogleSessionForAccountPicker, signInForIdToken } from '../lib/googleSignInHelpers';
+import { UI } from '../lib/ui';
 import { useAuthStore } from '../store/authStore';
 
 export default function GoogleLoginButton() {
@@ -87,7 +88,8 @@ export default function GoogleLoginButton() {
 
   return (
     <TouchableOpacity
-      className={`w-full flex-row items-center justify-center py-3.5 px-4 border-2 border-gray-300 rounded-xl bg-white ${loading ? 'opacity-60' : ''}`}
+      className={`w-full flex-row items-center justify-center py-3.5 px-4 rounded-2xl ${loading ? 'opacity-60' : ''}`}
+      style={{ backgroundColor: UI.color.surface, borderWidth: 1.5, borderColor: UI.color.border }}
       onPress={handleGoogleLogin}
       disabled={loading}>
       {loading ? (

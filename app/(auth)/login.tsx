@@ -17,6 +17,7 @@ import { showAlert } from '../../components/Alert';
 import GoogleLoginButton from '../../components/GoogleLoginButton';
 import { GOOGLE_CLIENT_ID } from '../../config/env';
 import { apiFetch } from '../../lib/api';
+import { UI } from '../../lib/ui';
 import { useAuthStore } from '../../store/authStore';
 
 export default function LoginScreen() {
@@ -98,31 +99,27 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}>
       <ScrollView
-        className="flex-1 bg-gray-50"
+        className="flex-1"
+        style={{ backgroundColor: UI.color.canvasAlt }}
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         automaticallyAdjustKeyboardInsets={true}>
-        <View className="flex-1 justify-center p-6 mt-6">
-          {/* <TouchableOpacity
+        <View className="flex-1 justify-center p-6">
+          <TouchableOpacity
             onPress={() => router.replace('/(auth)')}
-            className="flex-row items-center gap-1 mb-6 self-start"
+            className="w-10 h-10 rounded-xl items-center justify-center mb-8 active:bg-emerald-50"
             hitSlop={12}>
-            <MaterialIcons name="arrow-back" size={22} color="#374151" />
-            <Text className="text-base text-gray-700">Home</Text>
-          </TouchableOpacity> */}
+            <MaterialIcons name="arrow-back" size={22} color={UI.color.ink} />
+          </TouchableOpacity>
 
-          <Animated.View entering={FadeInDown.delay(100).duration(400)} className="items-center mb-6">
-            <View className="w-16 h-16 rounded-full bg-green-600 items-center justify-center">
-              <MaterialIcons name="login" size={32} color="#FFFFFF" />
-            </View>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-            <Text className="text-[28px] font-bold text-gray-900 mb-2 text-center">Sign in to your account</Text>
-            <Text className="text-sm text-gray-500 mb-8 text-center">
+          <Animated.View entering={FadeInDown.delay(150).duration(400)}>
+            <Text className="text-[28px] mb-2" style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+              Sign in to your account
+            </Text>
+            <Text className="text-sm text-gray-500 mb-8">
               New here?{' '}
-              <Text className="text-green-600 font-semibold" onPress={() => router.push('/(auth)/phone')}>
+              <Text className="font-semibold" style={{ color: UI.color.primary }} onPress={() => router.push('/(auth)/phone')}>
                 Continue with mobile
               </Text>
             </Text>
@@ -137,14 +134,16 @@ export default function LoginScreen() {
             )}
 
             {success && (
-              <Animated.View entering={FadeInDown.duration(200)} className="flex-row items-center bg-green-50 border border-green-200 rounded-xl p-3 gap-2">
-                <MaterialIcons name="check-circle" size={20} color="#16A34A" />
-                <Text className="flex-1 text-sm text-green-600">Login successful! Redirecting...</Text>
+              <Animated.View entering={FadeInDown.duration(200)} className="flex-row items-center bg-emerald-50 border border-emerald-200 rounded-xl p-3 gap-2">
+                <MaterialIcons name="check-circle" size={20} color="#059669" />
+                <Text className="flex-1 text-sm text-emerald-600">Login successful! Redirecting...</Text>
               </Animated.View>
             )}
 
             <Animated.View entering={FadeInDown.duration(300)}>
-              <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 mb-4">
+              <View
+                className="flex-row items-center rounded-2xl px-4 mb-4"
+                style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border }}>
                 <MaterialIcons name="email" size={20} color="#9CA3AF" style={{ marginRight: 12 }} />
                 <TextInput
                   className="flex-1 py-4 text-base text-gray-900"
@@ -162,7 +161,9 @@ export default function LoginScreen() {
                   onSubmitEditing={() => passwordInputRef.current?.focus()}
                 />
               </View>
-              <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 mb-4">
+              <View
+                className="flex-row items-center rounded-2xl px-4 mb-4"
+                style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border }}>
                 <MaterialIcons name="lock" size={20} color="#9CA3AF" style={{ marginRight: 12 }} />
                 <TextInput
                   ref={passwordInputRef}
@@ -189,7 +190,8 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
               <TouchableOpacity
-                className={`flex-row items-center justify-center bg-green-600 p-4 rounded-xl gap-2 min-h-[52px] ${(loading || success) ? 'opacity-60' : ''}`}
+                className={`flex-row items-center justify-center p-4 rounded-2xl gap-2 min-h-[52px] ${(loading || success) ? 'opacity-60' : ''}`}
+                style={{ backgroundColor: UI.color.primaryDark }}
                 onPress={handleLogin}
                 disabled={loading || success}>
                 {loading ? (
@@ -209,9 +211,11 @@ export default function LoginScreen() {
             {GOOGLE_CLIENT_ID && (
               <Animated.View entering={FadeInDown.delay(600).duration(400)}>
                 <View className="flex-row items-center my-4">
-                  <View className="flex-1 h-px bg-gray-300" />
-                  <Text className="mx-3 text-sm text-gray-500 bg-gray-50">Or continue with</Text>
-                  <View className="flex-1 h-px bg-gray-300" />
+                  <View className="flex-1 h-px" style={{ backgroundColor: UI.color.border }} />
+                  <Text className="mx-3 text-sm" style={{ color: UI.color.muted }}>
+                    Or continue with
+                  </Text>
+                  <View className="flex-1 h-px" style={{ backgroundColor: UI.color.border }} />
                 </View>
                 <GoogleLoginButton />
               </Animated.View>
@@ -221,7 +225,9 @@ export default function LoginScreen() {
               <TouchableOpacity
                 className="mt-2 items-center"
                 onPress={() => router.push('/(auth)/forgot-password')}>
-                <Text className="text-sm text-green-600 font-medium">Forgot your password?</Text>
+                <Text className="text-sm font-medium" style={{ color: UI.color.primary }}>
+                  Forgot your password?
+                </Text>
               </TouchableOpacity>
             </Animated.View>
           </View>

@@ -40,9 +40,9 @@ export function OtpInput({ value, onChange, length = 6, autoFocus, hasError }: O
                   hasError
                     ? 'border-red-300'
                     : isActive
-                      ? 'border-green-600'
+                      ? 'border-emerald-600'
                       : isFilled
-                        ? 'border-green-200'
+                        ? 'border-emerald-200'
                         : 'border-gray-200'
                 }`}
                 style={isActive && !hasError ? { borderColor: UI.color.primary } : undefined}>

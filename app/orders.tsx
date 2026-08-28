@@ -13,6 +13,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '../lib/api';
 import { UI } from '../lib/ui';
+import ScreenHeader from '../components/ScreenHeader';
 import { useAuthStore } from '../store/authStore';
 import { useSearchStore } from '../store/searchStore';
 
@@ -424,17 +425,10 @@ export default function OrdersScreen() {
   );
 
   const headerBar = (
-    <View className="flex-row items-center px-4 py-3 border-b border-emerald-100 bg-white">
-      <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2 rounded-xl active:bg-emerald-50">
-        <MaterialIcons name="arrow-back" size={UI.icon.lg} color={UI.color.ink} />
-      </TouchableOpacity>
-      <View className="flex-1 ml-1">
-        <Text className="text-lg font-bold text-emerald-950">My orders</Text>
-        {!loading && orders.length > 0 && (
-          <Text className="text-xs text-gray-500">{orders.length} shown</Text>
-        )}
-      </View>
-    </View>
+    <ScreenHeader
+      title="My orders"
+      subtitle={!loading && orders.length > 0 ? `${orders.length} shown` : undefined}
+    />
   );
 
   const ordersLoadingSkeleton = (
@@ -468,7 +462,7 @@ export default function OrdersScreen() {
 
   if (!token) {
     return (
-      <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: UI.color.canvas }}>
+      <SafeAreaView className="flex-1" edges={['left', 'right', 'bottom']} style={{ backgroundColor: UI.color.canvas }}>
         {headerBar}
         <View className="flex-1 justify-center items-center px-8">
           <View
@@ -493,7 +487,7 @@ export default function OrdersScreen() {
 
   if (loading && orders.length === 0) {
     return (
-      <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: UI.color.canvas }}>
+      <SafeAreaView className="flex-1" edges={['left', 'right', 'bottom']} style={{ backgroundColor: UI.color.canvas }}>
         {headerBar}
         {ordersLoadingSkeleton}
       </SafeAreaView>
@@ -501,7 +495,7 @@ export default function OrdersScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: UI.color.canvas }}>
+    <SafeAreaView className="flex-1" edges={['left', 'right', 'bottom']} style={{ backgroundColor: UI.color.canvas }}>
       {headerBar}
 
       {error && orders.length === 0 ? (

@@ -16,6 +16,7 @@ import { showAlert, showWelcomeAlert } from '../../../components/Alert';
 import { OtpInput } from '../../../components/OtpInput';
 import { apiFetch } from '../../../lib/api';
 import { useAuthStore } from '../../../store/authStore';
+import { UI } from '../../../lib/ui';
 import { useSignupDraft } from '../../../lib/signupDraftContext';
 
 export default function SignupVerifyStep() {
@@ -169,24 +170,24 @@ export default function SignupVerifyStep() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}>
       <ScrollView
-        className="flex-1 bg-gray-50"
+        className="flex-1"
+        style={{ backgroundColor: UI.color.canvasAlt }}
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         automaticallyAdjustKeyboardInsets>
-        <View className="p-6 pt-12">
+        <View className="p-6 pt-8">
           <TouchableOpacity
             onPress={() => router.back()}
-            className="flex-row items-center gap-1 mb-6 self-start"
+            className="w-10 h-10 rounded-xl items-center justify-center mb-6 self-start active:bg-emerald-50"
             hitSlop={12}
             disabled={busy}>
-            <MaterialIcons name="arrow-back" size={22} color="#374151" />
-            <Text className="text-base text-gray-700">Back</Text>
+            <MaterialIcons name="arrow-back" size={22} color={UI.color.ink} />
           </TouchableOpacity>
 
-          <Text className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">Step 4 of 4</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: UI.color.primary }}>Step 4 of 4</Text>
           <Animated.View entering={FadeInDown.duration(350)}>
-            <Text className="text-[26px] font-bold text-gray-900 mb-2">Verify your email</Text>
+            <Text className="text-[28px] mb-2" style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>Verify your email</Text>
             <Text className="text-sm text-gray-500 mb-8">
               We&apos;ll send a one-time code to <Text className="font-medium text-gray-800">{draft.email}</Text>
             </Text>
@@ -201,7 +202,8 @@ export default function SignupVerifyStep() {
 
           {!otpSent ? (
             <TouchableOpacity
-              className={`bg-green-600 p-4 rounded-2xl items-center justify-center min-h-[52px] mb-6 ${busy || cooldown > 0 ? 'opacity-60' : ''}`}
+              className={`p-4 rounded-2xl items-center justify-center min-h-[52px] mb-6 ${busy || cooldown > 0 ? 'opacity-60' : ''}`}
+              style={{ backgroundColor: UI.color.primaryDark }}
               onPress={sendOtp}
               disabled={busy || cooldown > 0}>
               {sending ? (
@@ -226,7 +228,8 @@ export default function SignupVerifyStep() {
               />
 
               <TouchableOpacity
-                className={`bg-green-600 p-4 rounded-2xl items-center justify-center min-h-[52px] mb-4 ${verifying || loadingSignup || otp.length !== 6 ? 'opacity-60' : ''}`}
+                className={`p-4 rounded-2xl items-center justify-center min-h-[52px] mb-4 ${verifying || loadingSignup || otp.length !== 6 ? 'opacity-60' : ''}`}
+                style={{ backgroundColor: UI.color.primaryDark }}
                 onPress={verifyAndFinish}
                 disabled={verifying || loadingSignup || otp.length !== 6}>
                 {verifying || loadingSignup ? (
@@ -240,7 +243,7 @@ export default function SignupVerifyStep() {
                 className="items-center py-2"
                 onPress={sendOtp}
                 disabled={sending || cooldown > 0}>
-                <Text className={`text-sm ${cooldown > 0 ? 'text-gray-400' : 'text-green-600 font-medium'}`}>
+                <Text className={`text-sm ${cooldown > 0 ? 'text-gray-400' : 'font-medium'}`} style={cooldown > 0 ? undefined : { color: UI.color.primary }}>
                   {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
                 </Text>
               </TouchableOpacity>

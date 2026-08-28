@@ -14,6 +14,7 @@ import {
 import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 import { showAlert } from '../../components/Alert';
 import { apiFetch } from '../../lib/api';
+import { UI } from '../../lib/ui';
 
 type Step = 'email' | 'otp' | 'reset';
 
@@ -187,7 +188,9 @@ export default function ForgotPasswordScreen() {
 
   const renderEmailStep = () => (
     <Animated.View entering={FadeInDown.duration(300)} exiting={FadeOutUp.duration(200)}>
-      <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 mb-4">
+      <View
+        className="flex-row items-center rounded-2xl px-4 mb-4"
+        style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border }}>
         <MaterialIcons name="email" size={20} color="#9CA3AF" className="mr-3" />
         <TextInput
           className="flex-1 py-4 text-base text-gray-900"
@@ -204,7 +207,8 @@ export default function ForgotPasswordScreen() {
       </View>
 
       <TouchableOpacity
-        className={`bg-green-600 p-4 rounded-xl items-center justify-center min-h-[52px] ${sendingOtp ? 'opacity-60' : ''}`}
+        className={`p-4 rounded-2xl items-center justify-center min-h-[52px] ${sendingOtp ? 'opacity-60' : ''}`}
+        style={{ backgroundColor: UI.color.primaryDark }}
         onPress={handleSendOTP}
         disabled={sendingOtp}>
         {sendingOtp ? (
@@ -220,7 +224,8 @@ export default function ForgotPasswordScreen() {
     <Animated.View entering={FadeInDown.duration(300)} exiting={FadeOutUp.duration(200)}>
       <View className="items-center mb-4">
         <TextInput
-          className="w-full bg-white border border-gray-200 rounded-xl p-5 text-[32px] font-bold tracking-[8px] text-center text-gray-900"
+          className="w-full rounded-2xl p-5 text-[32px] tracking-[8px] text-center"
+          style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border, color: UI.color.ink, fontFamily: UI.font.displayBold }}
           placeholder="000000"
           value={otp}
           onChangeText={(text) => {
@@ -238,7 +243,8 @@ export default function ForgotPasswordScreen() {
 
       <View className="flex-row gap-3">
         <TouchableOpacity
-          className="flex-1 flex-row items-center justify-center p-4 border border-gray-300 rounded-xl bg-white gap-2"
+          className="flex-1 flex-row items-center justify-center p-4 rounded-2xl gap-2"
+          style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border }}
           onPress={() => {
             setStep('email');
             setOtp('');
@@ -248,7 +254,8 @@ export default function ForgotPasswordScreen() {
           <Text className="text-base font-semibold text-gray-700">Back</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          className={`flex-1 bg-green-600 p-4 rounded-xl items-center justify-center min-h-[52px] ${(loading || otp.length !== 6) ? 'opacity-60' : ''}`}
+          className={`flex-1 p-4 rounded-2xl items-center justify-center min-h-[52px] ${(loading || otp.length !== 6) ? 'opacity-60' : ''}`}
+          style={{ backgroundColor: UI.color.primaryDark }}
           onPress={handleVerifyOTP}
           disabled={loading || otp.length !== 6}>
           {loading ? (
@@ -263,7 +270,9 @@ export default function ForgotPasswordScreen() {
 
   const renderResetStep = () => (
     <Animated.View entering={FadeInDown.duration(300)} exiting={FadeOutUp.duration(200)}>
-      <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 mb-4">
+      <View
+        className="flex-row items-center rounded-2xl px-4 mb-4"
+        style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border }}>
         <MaterialIcons name="lock" size={20} color="#9CA3AF" className="mr-3" />
         <TextInput
           className="flex-1 py-4 text-base text-gray-900 pr-2"
@@ -288,7 +297,9 @@ export default function ForgotPasswordScreen() {
         </TouchableOpacity>
       </View>
 
-      <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 mb-4">
+      <View
+        className="flex-row items-center rounded-2xl px-4 mb-4"
+        style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border }}>
         <MaterialIcons name="lock" size={20} color="#9CA3AF" className="mr-3" />
         <TextInput
           className="flex-1 py-4 text-base text-gray-900 pr-2"
@@ -315,7 +326,8 @@ export default function ForgotPasswordScreen() {
 
       <View className="flex-row gap-3">
         <TouchableOpacity
-          className="flex-1 flex-row items-center justify-center p-4 border border-gray-300 rounded-xl bg-white gap-2"
+          className="flex-1 flex-row items-center justify-center p-4 rounded-2xl gap-2"
+          style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border }}
           onPress={() => {
             setStep('otp');
             setNewPassword('');
@@ -326,7 +338,8 @@ export default function ForgotPasswordScreen() {
           <Text className="text-base font-semibold text-gray-700">Back</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          className={`flex-1 bg-green-600 p-4 rounded-xl items-center justify-center min-h-[52px] ${(loading || newPassword.length < 6 || newPassword !== confirmPassword) ? 'opacity-60' : ''}`}
+          className={`flex-1 p-4 rounded-2xl items-center justify-center min-h-[52px] ${(loading || newPassword.length < 6 || newPassword !== confirmPassword) ? 'opacity-60' : ''}`}
+          style={{ backgroundColor: UI.color.primaryDark }}
           onPress={handleResetPassword}
           disabled={loading || newPassword.length < 6 || newPassword !== confirmPassword}>
           {loading ? (
@@ -341,21 +354,18 @@ export default function ForgotPasswordScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-gray-50"
+      className="flex-1"
+      style={{ backgroundColor: UI.color.canvasAlt }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <View className="flex-1 justify-center p-6">
-          <Animated.View entering={FadeInDown.delay(100).duration(400)} className="items-center mb-6">
-            <View className="w-16 h-16 rounded-full bg-green-600 items-center justify-center">
-              <MaterialIcons name="lock" size={32} color="#FFFFFF" />
-            </View>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-            <Text className="text-[28px] font-bold text-gray-900 mb-2 text-center">
-              {step === 'email' && 'Forgot Password'}
+          <Animated.View entering={FadeInDown.delay(150).duration(400)}>
+            <Text
+              className="text-[28px] mb-2 text-center"
+              style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+              {step === 'email' && 'Forgot password'}
               {step === 'otp' && 'Verify OTP'}
-              {step === 'reset' && 'Reset Password'}
+              {step === 'reset' && 'Reset password'}
             </Text>
             <Text className="text-sm text-gray-500 mb-8 text-center">
               {step === 'email' && "Enter your email address and we'll send you a verification code"}
@@ -380,8 +390,10 @@ export default function ForgotPasswordScreen() {
           <TouchableOpacity
             className="flex-row items-center justify-center mt-6 gap-1.5"
             onPress={() => router.push('/(auth)/login')}>
-            <MaterialIcons name="arrow-back" size={16} color="#059669" />
-            <Text className="text-sm text-green-600 font-medium">Back to login</Text>
+            <MaterialIcons name="arrow-back" size={16} color={UI.color.primary} />
+            <Text className="text-sm font-medium" style={{ color: UI.color.primary }}>
+              Back to login
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -4,13 +4,26 @@ export interface Base {
   updatedAt: string;
 }
 
+export interface UserAddress {
+  line?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
 export interface User {
   id: number;
   name: string;
   email: string;
   phone?: string;
   role: string;
+  address?: UserAddress;
 }
+
+export type UserProfile = User;
 
 export interface Category extends Base {
   name: string;

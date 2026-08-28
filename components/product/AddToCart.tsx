@@ -108,7 +108,7 @@ export default function AddToCart({ product, selectedSize }: AddToCartProps) {
             className={`flex-row items-center justify-center px-4 py-3 rounded-lg font-semibold ${
               selectedSize.stock === 0
                 ? 'bg-gray-400'
-                : 'bg-green-600 active:bg-green-700'
+                : 'bg-emerald-600 active:bg-emerald-700'
             }`}>
             <MaterialIcons name="shopping-cart" size={18} color="#FFFFFF" />
             <Text className="text-white ml-2 font-semibold">Add to Cart</Text>
@@ -144,7 +144,7 @@ export default function AddToCart({ product, selectedSize }: AddToCartProps) {
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={() => router.push('/(auth)/login')}
-                className="flex-1 px-5 py-2.5 bg-green-600 rounded-lg active:bg-green-700">
+                className="flex-1 px-5 py-2.5 bg-emerald-600 rounded-lg active:bg-emerald-700">
                 <Text className="text-white font-medium text-center">Sign In</Text>
               </TouchableOpacity>
               <TouchableOpacity

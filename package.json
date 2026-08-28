@@ -15,6 +15,8 @@
     "build:android": "npm run version:patch && cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
+    "@expo-google-fonts/fraunces": "^0.4.1",
+    "@expo-google-fonts/manrope": "^0.4.2",
     "@expo/vector-icons": "^15.0.3",
     "@msg91comm/sendotp-react-native": "^2.1.0",
     "@pushpendersingh/react-native-otp-verify": "^1.2.0",
@@ -61,6 +63,7 @@
     "react-native-rename": "^3.2.17",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
+    "react-native-svg": "15.12.1",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "~0.21.0",

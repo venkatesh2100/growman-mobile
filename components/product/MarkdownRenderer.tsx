@@ -48,7 +48,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
       if (numberedListMatch && numberedListMatch[2]) {
         return (
           <View key={lineKey} className="flex-row items-start gap-2 my-1">
-            <Text className="text-green-600 font-medium">{numberedListMatch[1]}.</Text>
+            <Text className="text-emerald-600 font-medium">{numberedListMatch[1]}.</Text>
             <Text className="text-sm flex-1">{parseInlineMarkdown(numberedListMatch[2])}</Text>
           </View>
         );
@@ -59,7 +59,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
         const listContent = trimmedLine.replace(/^[-*]\s+/, '');
         return (
           <View key={lineKey} className="flex-row items-start gap-2 my-1">
-            <Text className="text-green-600">•</Text>
+            <Text className="text-emerald-600">•</Text>
             <Text className="text-sm flex-1">{parseInlineMarkdown(listContent)}</Text>
           </View>
         );
@@ -122,7 +122,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
           length: codeMatch[0].length,
           endIndex: end,
           component: (
-            <Text key={`code-${key++}`} className="bg-green-50 text-green-700 px-1 py-0.5 rounded text-xs">
+            <Text key={`code-${key++}`} className="bg-emerald-50 text-emerald-700 px-1 py-0.5 rounded text-xs">
               {codeMatch[1]}
             </Text>
           ),

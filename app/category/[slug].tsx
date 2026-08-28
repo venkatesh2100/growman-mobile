@@ -8,9 +8,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ProductGridSkeleton } from '../../components/skeletons/ProductGridSkeleton';
+import ScreenHeader from '../../components/ScreenHeader';
 import { UI } from '../../lib/ui';
 import ProductCard from '../../components/ProductCard';
 import { apiFetch } from '../../lib/api';
@@ -25,7 +25,6 @@ interface Subcategory {
 export default function CategoryScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<Product[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
@@ -111,7 +110,7 @@ export default function CategoryScreen() {
       key={subcategory.id}
       entering={FadeInDown.delay(index * 50).duration(300)}>
       <TouchableOpacity
-        className={`px-4 py-2 rounded-[20px] mr-2 ${selectedSubcategory === subcategory.slug ? 'bg-green-600' : 'bg-gray-100'}`}
+        className={`px-4 py-2 rounded-[20px] mr-2 ${selectedSubcategory === subcategory.slug ? 'bg-emerald-600' : 'bg-gray-100'}`}
         onPress={() =>
           setSelectedSubcategory(
             selectedSubcategory === subcategory.slug ? null : subcategory.slug
@@ -136,15 +135,8 @@ export default function CategoryScreen() {
 
   if (loading && products.length === 0) {
     return (
-      <View className="flex-1" style={{ backgroundColor: UI.color.canvas, paddingTop: insets.top }}>
-        <View className="flex-row items-center px-4 py-3 border-b border-emerald-100 bg-white">
-          <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-            <MaterialIcons name="arrow-back" size={UI.icon.lg} color={UI.color.ink} />
-          </TouchableOpacity>
-          <Text className="text-lg font-bold text-emerald-950 ml-2 flex-1" numberOfLines={1}>
-            {categoryName || 'Category'}
-          </Text>
-        </View>
+      <View className="flex-1" style={{ backgroundColor: UI.color.canvas }}>
+        <ScreenHeader title={categoryName || 'Category'} />
         <View className="flex-1 px-2 pt-3">
           <ProductGridSkeleton count={6} />
         </View>
@@ -153,15 +145,11 @@ export default function CategoryScreen() {
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: UI.color.canvas, paddingTop: insets.top }}>
-      <View className="flex-row items-center px-4 py-3 border-b border-emerald-100 bg-white gap-2">
-        <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-          <MaterialIcons name="arrow-back" size={UI.icon.lg} color={UI.color.ink} />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold text-emerald-950 flex-1" numberOfLines={1}>
-          {categoryName || slug}
-        </Text>
-      </View>
+    <View className="flex-1" style={{ backgroundColor: UI.color.canvas }}>
+      <ScreenHeader
+        title={categoryName || String(slug)}
+        subtitle={!loading ? `${products.length} ${products.length === 1 ? 'product' : 'products'}` : undefined}
+      />
       {/* Subcategories Filter */}
       {subcategories.length > 0 && (
         <View className="bg-white py-3 border-b border-emerald-100">
@@ -181,20 +169,13 @@ export default function CategoryScreen() {
         </View>
       )}
 
-      {/* Products Count */}
-      {!loading && (
-        <View className="px-4 py-3">
-          <Text className="text-sm text-gray-500">
-            {products.length} {products.length === 1 ? 'product' : 'products'} found
-          </Text>
-        </View>
-      )}
-
       {/* Products List */}
       {products.length === 0 && !loading ? (
         <View className="flex-1 justify-center items-center p-8">
           <MaterialIcons name="inventory-2" size={64} color="#D1D5DB" />
-          <Text className="text-xl font-semibold text-gray-900 mt-4">No products found</Text>
+          <Text className="text-xl mt-4" style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+            No products found
+          </Text>
           <Text className="text-sm text-gray-500 mt-2 text-center">
             {selectedSubcategory
               ? 'Try selecting a different subcategory'

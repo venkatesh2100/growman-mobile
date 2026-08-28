@@ -1,9 +1,8 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
-import { router } from 'expo-router';
 import React, { type ReactNode } from 'react';
-import { Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import ScreenHeader from '../components/ScreenHeader';
 import { UI } from '../lib/ui';
 
 const FULL_POLICY_URL =
@@ -14,7 +13,9 @@ const SITE_URL = 'https://growman.live/';
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View className="mb-5">
-      <Text className="text-base font-bold text-emerald-950 mb-2">{title}</Text>
+      <Text className="text-base mb-2" style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+        {title}
+      </Text>
       <Text className="text-sm text-gray-600 leading-6">{children}</Text>
     </View>
   );
@@ -26,13 +27,8 @@ export default function PrivacyPolicyScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: UI.color.canvas }}>
-      <View className="flex-row items-center px-4 py-3 border-b border-emerald-100 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2 rounded-xl active:bg-emerald-50">
-          <MaterialIcons name="arrow-back" size={UI.icon.lg} color={UI.color.ink} />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold text-emerald-950 ml-1 flex-1">Privacy Policy</Text>
-      </View>
+    <View className="flex-1" style={{ backgroundColor: UI.color.canvas }}>
+      <ScreenHeader title="Privacy policy" />
 
       <ScrollView
         className="flex-1 px-4 pt-4"
@@ -123,6 +119,6 @@ export default function PrivacyPolicyScreen() {
           </Section>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

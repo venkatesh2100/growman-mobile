@@ -141,29 +141,27 @@ export default function PhoneEntryScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}>
       <ScrollView
-        className="flex-1 bg-gray-50"
+        className="flex-1"
+        style={{ backgroundColor: UI.color.canvasAlt }}
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         automaticallyAdjustKeyboardInsets>
-        <View className="p-6 pt-12">
+        <View className="p-6 pt-8">
           <TouchableOpacity
             onPress={() => router.replace('/(auth)')}
-            className="flex-row items-center gap-1 mb-6 self-start"
+            className="w-10 h-10 rounded-xl items-center justify-center mb-6 self-start active:bg-emerald-50"
             hitSlop={12}>
-            <MaterialIcons name="arrow-back" size={22} color="#374151" />
-            <Text className="text-base text-gray-700">Back</Text>
+            <MaterialIcons name="arrow-back" size={22} color={UI.color.ink} />
           </TouchableOpacity>
 
-          <Animated.View entering={FadeInDown.delay(100).duration(400)} className="items-center mb-6">
-            <View className="w-16 h-16 rounded-full bg-green-600 items-center justify-center">
-              <MaterialIcons name="smartphone" size={32} color="#FFFFFF" />
-            </View>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-            <Text className="text-[26px] font-bold text-gray-900 mb-2 text-center">Enter mobile number</Text>
-            <Text className="text-sm text-gray-500 mb-8 text-center">
+          <Animated.View entering={FadeInDown.delay(100).duration(400)}>
+            <Text
+              className="text-[28px] mb-2"
+              style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+              Enter mobile number
+            </Text>
+            <Text className="text-sm text-gray-500 mb-8 leading-5">
               {truecallerReady
                 ? 'Verify in one tap with Truecaller, or get a 6-digit SMS code.'
                 : Platform.OS === 'android'
@@ -201,21 +199,23 @@ export default function PhoneEntryScreen() {
                 )}
               </TouchableOpacity>
               <View className="flex-row items-center my-5">
-                <View className="flex-1 h-px bg-gray-300" />
+                <View className="flex-1 h-px" style={{ backgroundColor: UI.color.border }} />
                 <Text className="mx-3 text-sm text-gray-500">or SMS OTP</Text>
-                <View className="flex-1 h-px bg-gray-300" />
+                <View className="flex-1 h-px" style={{ backgroundColor: UI.color.border }} />
               </View>
             </Animated.View>
           ) : null}
 
           <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-            <View className="flex-row items-center bg-white border border-gray-200 rounded-2xl px-3 mb-3 shadow-sm overflow-hidden">
-              <View className="flex-row items-center px-2 py-4 border-r border-gray-100 mr-2">
+            <View
+              className="flex-row items-center rounded-2xl px-3 mb-3 overflow-hidden"
+              style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border }}>
+              <View className="flex-row items-center px-2 py-4 border-r mr-2" style={{ borderColor: UI.color.border }}>
                 <Text className="text-base font-semibold text-gray-800">+91</Text>
               </View>
               <TextInput
                 className="flex-1 py-4 text-base text-gray-900 tracking-widest"
-                placeholder={hintLoading ? 'Detecting number…' : '10-digit mobile'}
+                // placeholder={hintLoading ? 'Detecting number…' : '10-digit mobile'}
                 value={phone}
                 onChangeText={(t) => {
                   setPhone(t.replace(/\D/g, '').slice(0, 10));
@@ -234,21 +234,11 @@ export default function PhoneEntryScreen() {
               ) : null}
             </View>
 
-            {Platform.OS === 'android' && (
-              <TouchableOpacity
-                onPress={requestPhoneHint}
-                disabled={hintLoading || busy}
-                className="flex-row items-center self-start gap-1.5 px-3 py-2 mb-5 rounded-full border border-emerald-200 bg-emerald-50 active:opacity-80"
-                hitSlop={8}>
-                <MaterialIcons name="sim-card" size={16} color={UI.color.primaryDark} />
-                <Text className="text-sm font-semibold" style={{ color: UI.color.primaryDark }}>
-                  {phone ? 'Change number from SIM' : 'Detect my number'}
-                </Text>
-              </TouchableOpacity>
-            )}
+           
 
             <TouchableOpacity
-              className={`flex-row items-center justify-center bg-green-600 p-4 rounded-2xl gap-2 min-h-[52px] ${busy ? 'opacity-60' : ''}`}
+              className={`flex-row items-center justify-center p-4 rounded-2xl gap-2 min-h-[52px] ${busy ? 'opacity-60' : ''}`}
+              style={{ backgroundColor: UI.color.primaryDark }}
               onPress={handleSendOtp}
               disabled={busy}
               activeOpacity={0.9}>
@@ -269,9 +259,9 @@ export default function PhoneEntryScreen() {
           {GOOGLE_CLIENT_ID ? (
             <Animated.View entering={FadeInDown.delay(500).duration(400)}>
               <View className="flex-row items-center my-6">
-                <View className="flex-1 h-px bg-gray-300" />
+                <View className="flex-1 h-px" style={{ backgroundColor: UI.color.border }} />
                 <Text className="mx-3 text-sm text-gray-500">Or continue with</Text>
-                <View className="flex-1 h-px bg-gray-300" />
+                <View className="flex-1 h-px" style={{ backgroundColor: UI.color.border }} />
               </View>
               <GoogleLoginButton />
             </Animated.View>
@@ -280,7 +270,10 @@ export default function PhoneEntryScreen() {
           <Animated.View entering={FadeInDown.delay(600).duration(400)} className="mt-6 items-center">
             <TouchableOpacity onPress={() => router.push('/(auth)/login')} hitSlop={10}>
               <Text className="text-sm text-gray-500">
-                Trouble signing in? <Text className="text-green-600 font-semibold">Use email</Text>
+                Trouble signing in?{' '}
+                <Text className="font-semibold" style={{ color: UI.color.primary }}>
+                  Use email
+                </Text>
               </Text>
             </TouchableOpacity>
           </Animated.View>

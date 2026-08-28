@@ -1,12 +1,11 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import React from 'react';
 import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScreenHeader from '../components/ScreenHeader';
 import { openChatbot } from '../lib/chatbotOpener';
+import { UI } from '../lib/ui';
 
 export default function SupportScreen() {
-  const insets = useSafeAreaInsets();
   const { orderId } = useLocalSearchParams<{ orderId?: string }>();
 
   const handleAskDootha = () => {
@@ -18,58 +17,63 @@ export default function SupportScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#F0F7F4]" style={{ paddingTop: insets.top }}>
-      <View className="flex-row items-center px-4 py-4 border-b border-gray-200 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-          <MaterialIcons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold text-gray-900 ml-2">Order Support</Text>
-      </View>
+    <View className="flex-1" style={{ backgroundColor: UI.color.canvasAlt }}>
+      <ScreenHeader title="Order support" />
 
       <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
-        <View className="bg-white rounded-2xl border border-gray-200 p-4 mb-4">
-          <Text className="text-base font-semibold text-gray-900">Need help with delivery?</Text>
-          <Text className="text-sm text-gray-600 mt-2">
+        <View className="bg-white rounded-2xl p-4 mb-4" style={{ borderWidth: 1, borderColor: UI.color.border }}>
+          <Text className="text-base font-semibold" style={{ color: UI.color.ink }}>
+            Need help with delivery?
+          </Text>
+          <Text className="text-sm text-gray-600 mt-2 leading-5">
             Share your issue with Dootha AI first for quick guidance. If still unresolved, contact Growman support.
           </Text>
           {orderId ? (
-            <View className="mt-3 rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-2">
-              <Text className="text-xs text-emerald-700">Order reference</Text>
-              <Text className="text-sm font-semibold text-emerald-900">#{orderId}</Text>
+            <View className="mt-3 rounded-xl px-3 py-2" style={{ backgroundColor: UI.color.primaryLight }}>
+              <Text className="text-xs" style={{ color: UI.color.primaryDark }}>
+                Order reference
+              </Text>
+              <Text className="text-sm font-semibold" style={{ color: UI.color.ink }}>
+                #{orderId}
+              </Text>
             </View>
           ) : null}
         </View>
 
         <TouchableOpacity
-          className="flex-row items-center justify-center gap-2 bg-emerald-700 rounded-2xl py-3.5 active:opacity-90 mb-3"
-          onPress={handleAskDootha}
-        >
+          className="flex-row items-center justify-center gap-2 rounded-2xl py-3.5 active:opacity-90 mb-3"
+          style={{ backgroundColor: UI.color.primaryDark }}
+          onPress={handleAskDootha}>
           <MaterialIcons name="auto-awesome" size={20} color="#fff" />
           <Text className="text-base font-semibold text-white">Ask Dootha AI</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="flex-row items-center bg-white rounded-2xl p-4 border border-gray-200 mb-3"
-          onPress={() => Linking.openURL('mailto:growman.live@gmail.com')}
-        >
-          <MaterialIcons name="email" size={22} color="#059669" />
-          <View className="ml-3 flex-1">
+          className="flex-row items-center bg-white rounded-2xl p-4 mb-3"
+          style={{ borderWidth: 1, borderColor: UI.color.border }}
+          onPress={() => Linking.openURL('mailto:growman.live@gmail.com')}>
+          <View className="w-10 h-10 rounded-xl items-center justify-center mr-3" style={{ backgroundColor: UI.color.primaryLight }}>
+            <MaterialIcons name="email" size={20} color={UI.color.primary} />
+          </View>
+          <View className="ml-0 flex-1">
             <Text className="text-sm font-semibold text-gray-900">Email support</Text>
             <Text className="text-sm text-gray-600">growman.live@gmail.com</Text>
           </View>
-          <MaterialIcons name="chevron-right" size={22} color="#9CA3AF" />
+          <MaterialIcons name="chevron-right" size={22} color="#C4C9D1" />
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="flex-row items-center bg-white rounded-2xl p-4 border border-gray-200"
-          onPress={() => router.push('/orders')}
-        >
-          <MaterialIcons name="receipt-long" size={22} color="#059669" />
-          <View className="ml-3 flex-1">
-            <Text className="text-sm font-semibold text-gray-900">Go to My Orders</Text>
+          className="flex-row items-center bg-white rounded-2xl p-4"
+          style={{ borderWidth: 1, borderColor: UI.color.border }}
+          onPress={() => router.push('/orders')}>
+          <View className="w-10 h-10 rounded-xl items-center justify-center mr-3" style={{ backgroundColor: UI.color.primaryLight }}>
+            <MaterialIcons name="receipt-long" size={20} color={UI.color.primary} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-sm font-semibold text-gray-900">Go to my orders</Text>
             <Text className="text-sm text-gray-600">Track and view full order details</Text>
           </View>
-          <MaterialIcons name="chevron-right" size={22} color="#9CA3AF" />
+          <MaterialIcons name="chevron-right" size={22} color="#C4C9D1" />
         </TouchableOpacity>
       </ScrollView>
     </View>

@@ -32,7 +32,9 @@ export default function CartScreen() {
       <View
         className="flex-row items-center justify-between px-4 border-b border-emerald-100 bg-white"
         style={{ paddingTop: insets.top + 10, paddingBottom: 14 }}>
-        <Text className="text-xl font-bold text-emerald-950">Cart</Text>
+        <Text className="text-xl" style={{ color: UI.color.ink, fontFamily: UI.font.display }}>
+          Cart
+        </Text>
         <TouchableOpacity
           onPress={() => openSearch()}
           className="w-11 h-11 rounded-2xl items-center justify-center active:bg-emerald-50"
@@ -48,7 +50,11 @@ export default function CartScreen() {
             style={{ backgroundColor: 'rgba(5, 150, 105, 0.1)' }}>
             <MaterialIcons name="shopping-bag" size={40} color={UI.color.primary} />
           </View>
-          <Text className="text-xl font-semibold text-gray-900 mb-2 text-center">Your cart is empty</Text>
+          <Text
+            className="text-xl mb-2 text-center"
+            style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+            Your cart is empty
+          </Text>
           <Text className="text-base text-gray-600 mb-8 text-center leading-6">
             Discover plants tailored to your space — start browsing the shop.
           </Text>

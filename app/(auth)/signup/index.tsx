@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { showAlert } from '../../../components/Alert';
 import { apiFetch } from '../../../lib/api';
+import { UI } from '../../../lib/ui';
 import { useSignupDraft } from '../../../lib/signupDraftContext';
 
 const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
@@ -68,26 +69,30 @@ export default function SignupEmailStep() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}>
       <ScrollView
-        className="flex-1 bg-gray-50"
+        className="flex-1"
+        style={{ backgroundColor: UI.color.canvasAlt }}
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         automaticallyAdjustKeyboardInsets>
-        <View className="p-6 pt-12">
+        <View className="p-6 pt-8">
           <TouchableOpacity
             onPress={() => {
               reset();
               router.replace('/(auth)');
             }}
-            className="flex-row items-center gap-1 mb-6 self-start"
+            className="w-10 h-10 rounded-xl items-center justify-center mb-6 self-start active:bg-emerald-50"
             hitSlop={12}>
-            <MaterialIcons name="arrow-back" size={22} color="#374151" />
-            <Text className="text-base text-gray-700">Back</Text>
+            <MaterialIcons name="arrow-back" size={22} color={UI.color.ink} />
           </TouchableOpacity>
 
-          <Text className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">Step 1 of 4</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: UI.color.primary }}>
+            Step 1 of 4
+          </Text>
           <Animated.View entering={FadeInDown.duration(350)}>
-            <Text className="text-[26px] font-bold text-gray-900 mb-2">What&apos;s your email?</Text>
+            <Text className="text-[28px] mb-2" style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+              What&apos;s your email?
+            </Text>
             <Text className="text-sm text-gray-500 mb-8">
               We&apos;ll check if you already have an account before we continue.
             </Text>
@@ -100,7 +105,9 @@ export default function SignupEmailStep() {
             </View>
           )}
 
-          <View className="flex-row items-center bg-white border border-gray-200 rounded-2xl px-4 mb-6 shadow-sm">
+          <View
+            className="flex-row items-center rounded-2xl px-4 mb-6"
+            style={{ backgroundColor: UI.color.surface, borderWidth: 1, borderColor: UI.color.border }}>
             <MaterialIcons name="email" size={22} color="#9CA3AF" style={{ marginRight: 12 }} />
             <TextInput
               className="flex-1 py-4 text-base text-gray-900"
@@ -120,7 +127,8 @@ export default function SignupEmailStep() {
           </View>
 
           <TouchableOpacity
-            className={`bg-green-600 p-4 rounded-2xl items-center justify-center min-h-[52px] ${loading ? 'opacity-60' : ''}`}
+            className={`p-4 rounded-2xl items-center justify-center min-h-[52px] ${loading ? 'opacity-60' : ''}`}
+            style={{ backgroundColor: UI.color.primaryDark }}
             onPress={onContinue}
             disabled={loading}>
             {loading ? (

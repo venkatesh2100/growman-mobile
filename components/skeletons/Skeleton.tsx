@@ -1,11 +1,12 @@
-import React, { useEffect } from 'react';
-import { DimensionValue, View, ViewStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
+import { DimensionValue, LayoutChangeEvent, View, ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
+  Easing,
 } from 'react-native-reanimated';
 
 type Props = {
@@ -16,20 +17,27 @@ type Props = {
   rounded?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
 };
 
+const BASE_TONE = '#E7ECE8';
+
+/** A soft light-sweep shimmer — reads as "content is loading", not "something broke". */
 export function Skeleton({ className = '', style, height, width, rounded = 'md' }: Props) {
-  const opacity = useSharedValue(0.45);
+  const [boxWidth, setBoxWidth] = useState(0);
+  const sweep = useSharedValue(0);
 
   useEffect(() => {
-    opacity.value = withRepeat(
-      withSequence(withTiming(0.85, { duration: 700 }), withTiming(0.45, { duration: 700 })),
+    sweep.value = withRepeat(
+      withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
       -1,
       false
     );
-  }, [opacity]);
+  }, [sweep]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    const span = Math.max(boxWidth, 40) * 1.6;
+    return {
+      transform: [{ translateX: -span / 2 + sweep.value * span }],
+    };
+  });
 
   const r =
     rounded === 'full'
@@ -42,19 +50,36 @@ export function Skeleton({ className = '', style, height, width, rounded = 'md' 
             ? 12
             : 8;
 
+  const onLayout = (e: LayoutChangeEvent) => setBoxWidth(e.nativeEvent.layout.width);
+
   return (
-    <Animated.View
+    <View
+      onLayout={onLayout}
       style={[
         {
           height: height ?? 16,
           width: width ?? '100%',
           borderRadius: r,
-          backgroundColor: '#D1D5DB',
+          backgroundColor: BASE_TONE,
+          overflow: 'hidden',
         },
-        animatedStyle,
         style,
       ]}
-      className={className}
-    />
+      className={className}>
+      {boxWidth > 0 && (
+        <Animated.View
+          style={[
+            { position: 'absolute', top: 0, bottom: 0, width: boxWidth * 0.55 },
+            animatedStyle,
+          ]}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.75)', 'rgba(255,255,255,0)']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+      )}
+    </View>
   );
 }

@@ -9,16 +9,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Loading from '../components/Loading';
+import ScreenHeader from '../components/ScreenHeader';
+import SelectField from '../components/SelectField';
 import { toast } from '../components/Toast';
 import { apiFetch } from '../lib/api';
 import { getAllStateNames } from '../lib/data/indianStatesCities';
+import { UI } from '../lib/ui';
 import { useAuthStore } from '../store/authStore';
-import SelectField from '../components/SelectField';
+import { useUserStore } from '../store/userStore';
+
+const inputClass = 'rounded-xl px-4 py-3 text-base text-gray-900';
+const inputStyle = { borderWidth: 1, borderColor: UI.color.border, backgroundColor: UI.color.surface };
 
 export default function SavedAddressesScreen() {
-  const insets = useSafeAreaInsets();
   const { token } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -92,6 +96,7 @@ export default function SavedAddressesScreen() {
       });
       if (res.ok) {
         toast('Address saved successfully', 'success');
+        await useUserStore.getState().loadUser();
       } else {
         const err = await res.json().catch(() => ({}));
         toast((err as { error?: string })?.error || 'Failed to save', 'error');
@@ -105,9 +110,12 @@ export default function SavedAddressesScreen() {
 
   if (!token) {
     return (
-      <View className="flex-1 bg-gray-50 justify-center items-center" style={{ paddingTop: insets.top }}>
-        <Text className="text-gray-600 mb-4">Please login to manage addresses</Text>
-        <TouchableOpacity className="bg-green-600 px-6 py-3 rounded-xl" onPress={() => router.replace('/(auth)/login')}>
+      <View className="flex-1 justify-center items-center px-8" style={{ backgroundColor: UI.color.canvasAlt }}>
+        <Text className="text-gray-600 mb-4 text-center">Please login to manage addresses</Text>
+        <TouchableOpacity
+          className="px-6 py-3 rounded-xl"
+          style={{ backgroundColor: UI.color.primary }}
+          onPress={() => router.replace('/(auth)/login')}>
           <Text className="text-white font-semibold">Login</Text>
         </TouchableOpacity>
       </View>
@@ -117,19 +125,15 @@ export default function SavedAddressesScreen() {
   if (loading) return <Loading />;
 
   return (
-    <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
-      <View className="flex-row items-center px-4 py-4 border-b border-gray-200 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-          <MaterialIcons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold text-gray-900 ml-2">Saved Addresses</Text>
-      </View>
+    <View className="flex-1" style={{ backgroundColor: UI.color.canvasAlt }}>
+      <ScreenHeader title="Saved addresses" />
       <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
-        <View className="bg-white rounded-2xl p-6 shadow-sm">
+        <View className="bg-white rounded-2xl p-5" style={{ borderWidth: 1, borderColor: UI.color.border }}>
           <View className="mb-4">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Address Line *</Text>
+            <Text className="text-sm font-medium text-gray-700 mb-2">Address line *</Text>
             <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base"
+              className={inputClass}
+              style={inputStyle}
               value={address.line}
               onChangeText={(t) => setAddress({ ...address, line: t })}
               placeholder="House/Flat No., Building, Street"
@@ -140,7 +144,8 @@ export default function SavedAddressesScreen() {
           <View className="mb-4">
             <Text className="text-sm font-medium text-gray-700 mb-2">City *</Text>
             <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base"
+              className={inputClass}
+              style={inputStyle}
               value={address.city}
               onChangeText={(t) => setAddress({ ...address, city: t })}
               placeholder="City"
@@ -156,10 +161,11 @@ export default function SavedAddressesScreen() {
               placeholder="Select State"
             />
           </View>
-          <View className="mb-4">
+          <View className="mb-5">
             <Text className="text-sm font-medium text-gray-700 mb-2">Pincode *</Text>
             <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base"
+              className={inputClass}
+              style={inputStyle}
               value={address.pincode}
               onChangeText={(t) => setAddress({ ...address, pincode: t.replace(/\D/g, '').slice(0, 6) })}
               placeholder="6-digit pincode"
@@ -169,7 +175,8 @@ export default function SavedAddressesScreen() {
             />
           </View>
           <TouchableOpacity
-            className="bg-green-600 py-4 rounded-xl flex-row items-center justify-center"
+            className="py-3.5 rounded-2xl flex-row items-center justify-center"
+            style={{ backgroundColor: UI.color.primaryDark }}
             onPress={handleSave}
             disabled={saving}>
             {saving ? (
@@ -177,7 +184,7 @@ export default function SavedAddressesScreen() {
             ) : (
               <>
                 <MaterialIcons name="save" size={20} color="#fff" />
-                <Text className="text-white font-semibold ml-2">Save Address</Text>
+                <Text className="text-white font-semibold ml-2">Save address</Text>
               </>
             )}
           </TouchableOpacity>

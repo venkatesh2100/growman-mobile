@@ -26,6 +26,7 @@ import { showConfirm } from '../../components/Alert';
 import { toast } from '../../components/Toast';
 import { apiFetch, identifyPlant, searchProducts } from '../../lib/api';
 import { Product } from '../../lib/types';
+import { UI } from '../../lib/ui';
 import { useAuthStore } from '../../store/authStore';
 import { useSearchStore } from '../../store/searchStore';
 
@@ -427,7 +428,9 @@ export default function ShopScreen() {
             <View className="flex-row items-center gap-2 flex-1">
               <MaterialIcons name="storefront" size={26} color="#14532D" />
               <View>
-                <Text className="text-xl font-bold text-emerald-950">Shop</Text>
+                <Text className="text-xl" style={{ color: UI.color.ink, fontFamily: UI.font.display }}>
+                  Shop
+                </Text>
                 <Text className="text-xs text-emerald-700/80" numberOfLines={1}>
                   {subtitle}
                 </Text>
@@ -666,7 +669,9 @@ export default function ShopScreen() {
         <View className="flex-1 bg-black/50 justify-end">
           <View className="bg-white rounded-t-3xl p-6 pb-8" style={{ paddingBottom: insets.bottom + 24 }}>
             <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-xl font-bold text-emerald-950">Sort by</Text>
+              <Text className="text-xl" style={{ color: UI.color.ink, fontFamily: UI.font.display }}>
+                Sort by
+              </Text>
               <TouchableOpacity onPress={() => setShowFilters(false)}>
                 <MaterialIcons name="close" size={24} color="#14532D" />
               </TouchableOpacity>

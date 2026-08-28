@@ -1,6 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthStore {
   token: string | null;
@@ -26,12 +26,23 @@ export const useAuthStore = create<AuthStore>()(
           token,
           isAuthenticated: !!token,
         });
+        // Lazy import avoids circular init issues between auth and user stores.
+        void import('./userStore').then(({ useUserStore }) => {
+          if (token) {
+            void useUserStore.getState().loadUser();
+          } else {
+            useUserStore.getState().reset();
+          }
+        });
       },
 
       clearAuth: () => {
         set({
           token: null,
           isAuthenticated: false,
+        });
+        void import('./userStore').then(({ useUserStore }) => {
+          useUserStore.getState().reset();
         });
       },
 

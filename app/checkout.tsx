@@ -20,6 +20,7 @@ import { toast } from '../components/Toast';
 import { RAZORPAY_KEY_ID } from '../config/env';
 import { apiFetch } from '../lib/api';
 import { getAllStateNames, indianStates } from '../lib/data/indianStatesCities';
+import { UI } from '../lib/ui';
 import { getCurrentLocation } from '../lib/utils/geolocation';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
@@ -489,7 +490,7 @@ export default function CheckoutScreen() {
         <Text className="text-2xl font-semibold text-gray-800 my-2">Your cart is empty</Text>
         <Text className="text-base text-gray-600 mb-6 text-center">Add some plants to your cart to continue</Text>
         <TouchableOpacity
-          className="bg-green-600 px-6 py-3 rounded-lg active:bg-green-700"
+          className="bg-emerald-600 px-6 py-3 rounded-lg active:bg-emerald-700"
           onPress={() => router.push('/(tabs)/shop')}>
           <Text className="text-base font-medium text-white">Continue Shopping</Text>
         </TouchableOpacity>
@@ -498,11 +499,14 @@ export default function CheckoutScreen() {
   }
 
   return (
-    <ScrollView 
-      className="flex-1 bg-gray-50"
+    <ScrollView
+      className="flex-1"
+      style={{ backgroundColor: UI.color.canvasAlt }}
       contentContainerStyle={{ paddingTop: insets.top }}>
       <View className="p-4">
-        <Text className="text-2xl font-bold text-gray-900 mb-6">Checkout</Text>
+        <Text className="text-2xl mb-6" style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+          Checkout
+        </Text>
 
         {/* Customer Information Form */}
         <View className="bg-white rounded-xl p-4 mb-4 shadow-md">
@@ -576,12 +580,12 @@ export default function CheckoutScreen() {
                   {locating ? (
                     <>
                       <ActivityIndicator size="small" color="#059669" />
-                      <Text className="text-sm text-green-600">Locating...</Text>
+                      <Text className="text-sm text-emerald-600">Locating...</Text>
                     </>
                   ) : (
                     <>
                       <MaterialIcons name="my-location" size={16} color="#059669" />
-                      <Text className="text-sm text-green-600 font-medium">Locate Me</Text>
+                      <Text className="text-sm text-emerald-600 font-medium">Locate Me</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -647,7 +651,7 @@ export default function CheckoutScreen() {
 
         {/* Email OTP Verification - Only for non-logged-in users */}
         {!isAuthenticated && !otpVerified && (
-          <View className="bg-white rounded-xl p-4 mb-4 border-2 border-green-200 shadow-md">
+          <View className="bg-white rounded-xl p-4 mb-4 border-2 border-emerald-200 shadow-md">
             <View className="flex-row items-center mb-4">
               <MaterialIcons name="mail" size={20} color="#059669" />
               <Text className="text-lg font-semibold text-gray-900 ml-2">Verify Email (Optional)</Text>
@@ -657,7 +661,7 @@ export default function CheckoutScreen() {
             </Text>
             {!otpSent ? (
               <TouchableOpacity
-                className="w-full bg-green-600 py-3 rounded-lg active:bg-green-700 flex-row items-center justify-center"
+                className="w-full bg-emerald-600 py-3 rounded-lg active:bg-emerald-700 flex-row items-center justify-center"
                 onPress={handleSendOTP}
                 disabled={sendingOtp || !customerInfo.email}>
                 {sendingOtp ? (
@@ -689,7 +693,7 @@ export default function CheckoutScreen() {
                   />
                 </View>
                 <TouchableOpacity
-                  className="w-full bg-green-600 py-3 rounded-lg active:bg-green-700 flex-row items-center justify-center"
+                  className="w-full bg-emerald-600 py-3 rounded-lg active:bg-emerald-700 flex-row items-center justify-center"
                   onPress={handleVerifyOTP}
                   disabled={verifyingOtp || otp.length !== 6}>
                   {verifyingOtp ? (
@@ -707,14 +711,14 @@ export default function CheckoutScreen() {
                     setOtpSent(false);
                     setOtp('');
                   }}>
-                  <Text className="text-sm text-green-600 text-center">Resend OTP</Text>
+                  <Text className="text-sm text-emerald-600 text-center">Resend OTP</Text>
                 </TouchableOpacity>
               </View>
             )}
             {otpVerified && (
-              <View className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex-row items-center">
+              <View className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex-row items-center">
                 <MaterialIcons name="check-circle" size={20} color="#059669" />
-                <Text className="text-sm text-green-700 ml-2">Email verified successfully!</Text>
+                <Text className="text-sm text-emerald-700 ml-2">Email verified successfully!</Text>
               </View>
             )}
             <View className="mt-4 pt-4 border-t border-gray-200">
@@ -731,7 +735,7 @@ export default function CheckoutScreen() {
 
         {/* Show verification status for logged-in users */}
         {isAuthenticated && (
-          <View className="bg-white rounded-xl p-4 mb-4 border-2 border-green-200 shadow-md">
+          <View className="bg-white rounded-xl p-4 mb-4 border-2 border-emerald-200 shadow-md">
             <View className="flex-row items-center">
               <MaterialIcons name="check-circle" size={20} color="#059669" />
               <View className="ml-2">
@@ -778,13 +782,13 @@ export default function CheckoutScreen() {
             </View>
             {discount > 0 && (
               <View className="flex-row justify-between">
-                <Text className="text-sm text-green-600 font-medium">Discount</Text>
-                <Text className="text-sm text-green-600 font-medium">-₹{discount.toFixed(2)}</Text>
+                <Text className="text-sm text-emerald-600 font-medium">Discount</Text>
+                <Text className="text-sm text-emerald-600 font-medium">-₹{discount.toFixed(2)}</Text>
               </View>
             )}
             <View className="flex-row justify-between">
               <Text className="text-sm text-gray-700">Delivery</Text>
-              <Text className={`text-sm ${shipping === 0 ? 'text-green-600 font-medium' : 'text-gray-700'}`}>
+              <Text className={`text-sm ${shipping === 0 ? 'text-emerald-600 font-medium' : 'text-gray-700'}`}>
                 {shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`}
               </Text>
             </View>
@@ -804,14 +808,14 @@ export default function CheckoutScreen() {
           )}
 
           {paymentStatus === 'success' && (
-            <View className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex-row items-center">
+            <View className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex-row items-center">
               <MaterialIcons name="check-circle" size={20} color="#059669" />
-              <Text className="text-sm text-green-700 ml-2">Payment successful! Redirecting...</Text>
+              <Text className="text-sm text-emerald-700 ml-2">Payment successful! Redirecting...</Text>
             </View>
           )}
 
           <TouchableOpacity
-            className="w-full bg-green-600 py-3 rounded-lg active:bg-green-700 flex-row items-center justify-center"
+            className="w-full bg-emerald-600 py-3 rounded-lg active:bg-emerald-700 flex-row items-center justify-center"
             onPress={handlePayment}
             disabled={loading || paymentStatus === 'processing' || (!isAuthenticated && !otpVerified)}>
             {loading || paymentStatus === 'processing' ? (
@@ -848,7 +852,7 @@ export default function CheckoutScreen() {
             </Text>
             <View className="flex-row gap-3">
               <TouchableOpacity
-                className="flex-1 bg-green-600 py-3 rounded-lg active:bg-green-700 flex-row items-center justify-center"
+                className="flex-1 bg-emerald-600 py-3 rounded-lg active:bg-emerald-700 flex-row items-center justify-center"
                 onPress={() => {
                   router.push(`/(auth)/login?email=${encodeURIComponent(customerInfo.email)}&phone=${encodeURIComponent(customerInfo.phone)}&redirect=/checkout`);
                 }}>

@@ -67,13 +67,13 @@ export default function SelectField({
               keyExtractor={(item) => item.value}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  className={`px-4 py-3 ${item.value === value ? 'bg-green-50' : ''}`}
+                  className={`px-4 py-3 ${item.value === value ? 'bg-emerald-50' : ''}`}
                   onPress={() => {
                     onValueChange(item.value);
                     setOpen(false);
                   }}>
                   <Text
-                    className={`text-base ${item.value === value ? 'text-green-600 font-medium' : 'text-gray-900'}`}>
+                    className={`text-base ${item.value === value ? 'text-emerald-600 font-medium' : 'text-gray-900'}`}>
                     {item.label}
                   </Text>
                 </TouchableOpacity>

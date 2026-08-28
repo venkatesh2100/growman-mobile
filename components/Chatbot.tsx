@@ -14,7 +14,16 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,6 +60,81 @@ function orderStatusColors(status: string) {
   if (s.includes('ship') || s.includes('delivery')) return { bg: '#DBEAFE', text: '#1E40AF' };
   if (s.includes('pending')) return { bg: '#FEE2E2', text: '#991B1B' };
   return { bg: '#FEF3C7', text: '#92400E' };
+}
+
+const THINKING_DOTS = [0, 160, 320];
+
+function ThinkingDot({ delay }: { delay: number }) {
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) }),
+          withTiming(0, { duration: 420, easing: Easing.in(Easing.cubic) })
+        ),
+        -1,
+        false
+      )
+    );
+  }, [delay, progress]);
+
+  const dotStyle = useAnimatedStyle(() => ({
+    opacity: 0.35 + progress.value * 0.65,
+    transform: [{ translateY: -progress.value * 4 }, { scale: 0.88 + progress.value * 0.12 }],
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        { width: 7, height: 7, borderRadius: 999, backgroundColor: UI.color.primary },
+        dotStyle,
+      ]}
+    />
+  );
+}
+
+function ThinkingIndicator() {
+  const shimmer = useSharedValue(0.45);
+
+  useEffect(() => {
+    shimmer.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.45, { duration: 900, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    );
+  }, [shimmer]);
+
+  const labelStyle = useAnimatedStyle(() => ({
+    opacity: shimmer.value,
+  }));
+
+  return (
+    <Animated.View entering={FadeInDown.duration(220)} className="mb-2 items-start">
+      <View className="max-w-[80%] px-4 py-3 rounded-2xl rounded-bl-md bg-white border border-emerald-100 flex-row items-center gap-3">
+        {/* <Image
+          source={require('../assets/images/icon-transparent.png')}
+          style={{ width: 22, height: 22, opacity: 0.85 }}
+          resizeMode="contain"
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        /> */}
+        <View className="flex-row items-center gap-1.5">
+          {THINKING_DOTS.map((delay) => (
+            <ThinkingDot key={delay} delay={delay} />
+          ))}
+        </View>
+        <Animated.Text className="text-sm text-gray-500 ml-0.5" style={labelStyle}>
+          Thinking
+        </Animated.Text>
+      </View>
+    </Animated.View>
+  );
 }
 
 export default function Chatbot() {
@@ -348,14 +432,17 @@ export default function Chatbot() {
                 className="flex-row justify-between items-center px-4 py-3 border-b border-emerald-100"
                 style={{ backgroundColor: UI.color.canvas }}>
                 <View className="flex-row items-center gap-3">
-                  <View
-                    className="w-10 h-10 rounded-full items-center justify-center"
-                    style={{ backgroundColor: 'rgba(5, 150, 105, 0.12)' }}>
-                    <MaterialIcons name="smart-toy" size={UI.icon.md} color={UI.color.primary} />
-                  </View>
+                  <Image
+                    source={require('../assets/images/icon-transparent.png')}
+                    className="w-10 h-10"
+                    resizeMode="contain"
+                    accessibilityLabel="Dootha"
+                  />
                   <View>
-                    <Text className="text-base font-bold text-emerald-950">Dootha</Text>
-                    <Text className="text-xs text-gray-500">Growman assistant</Text>
+                    <Text className="text-lg" style={{ fontFamily: UI.font.display, color: UI.color.ink }}>
+                      Dootha
+                    </Text>
+                    <Text className="text-xs text-gray-500">Growman plant assistant</Text>
                   </View>
                 </View>
                 <TouchableOpacity onPress={() => setIsOpen(false)} hitSlop={12} className="p-2 rounded-xl active:bg-emerald-50">
@@ -372,14 +459,7 @@ export default function Chatbot() {
                 keyboardDismissMode="on-drag"
                 showsVerticalScrollIndicator={false}>
                 {messages.map((message, index) => renderMessage(message, index))}
-                {isLoading && (
-                  <View className="mb-2 items-start">
-                    <View className="max-w-[80%] px-4 py-3 rounded-2xl rounded-bl-md bg-white border border-emerald-100 flex-row items-center gap-2">
-                      <ActivityIndicator size="small" color={UI.color.primary} />
-                      <Text className="text-sm text-gray-600">Thinking…</Text>
-                    </View>
-                  </View>
-                )}
+                {isLoading ? <ThinkingIndicator /> : null}
               </ScrollView>
 
               <View

@@ -1,12 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React from 'react';
 import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScreenHeader from '../components/ScreenHeader';
+import { UI } from '../lib/ui';
 
 export default function HelpCenterScreen() {
-  const insets = useSafeAreaInsets();
-
   const faqs = [
     { q: 'How do I track my order?', a: 'After placing an order, you\'ll receive a confirmation. Track status in My Orders.' },
     { q: 'What is your return policy?', a: 'Plants are living products. Contact us within 48 hours if there\'s an issue with delivery.' },
@@ -15,32 +12,35 @@ export default function HelpCenterScreen() {
   ];
 
   return (
-    <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
-      <View className="flex-row items-center px-4 py-4 border-b border-gray-200 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-          <MaterialIcons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold text-gray-900 ml-2">Help Center</Text>
-      </View>
-      <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
-        <View className="bg-white rounded-2xl p-4 mb-4">
-          <Text className="text-base font-semibold text-gray-900 mb-3">Frequently Asked Questions</Text>
+    <View className="flex-1" style={{ backgroundColor: UI.color.canvasAlt }}>
+      <ScreenHeader title="Help center" />
+      <ScrollView className="flex-1 px-4 pt-5" contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+        <View className="bg-white rounded-2xl p-4 mb-4" style={{ borderWidth: 1, borderColor: UI.color.border }}>
+          <Text className="text-base font-semibold mb-3" style={{ color: UI.color.ink }}>
+            Frequently asked questions
+          </Text>
           {faqs.map((faq, i) => (
-            <View key={i} className="mb-4 pb-4 border-b border-gray-100 last:border-b-0 last:mb-0 last:pb-0">
+            <View
+              key={faq.q}
+              className={i < faqs.length - 1 ? 'mb-4 pb-4' : ''}
+              style={i < faqs.length - 1 ? { borderBottomWidth: 1, borderBottomColor: UI.color.border } : undefined}>
               <Text className="text-sm font-medium text-gray-800 mb-1">{faq.q}</Text>
-              <Text className="text-sm text-gray-500">{faq.a}</Text>
+              <Text className="text-sm text-gray-500 leading-5">{faq.a}</Text>
             </View>
           ))}
         </View>
         <TouchableOpacity
           className="flex-row items-center bg-white rounded-2xl p-4"
+          style={{ borderWidth: 1, borderColor: UI.color.border }}
           onPress={() => Linking.openURL('mailto:support@growman.in')}>
-          <MaterialIcons name="email" size={24} color="#059669" />
-          <View className="ml-4 flex-1">
-            <Text className="text-base font-medium text-gray-900">Email Support</Text>
+          <View className="w-10 h-10 rounded-xl items-center justify-center mr-3" style={{ backgroundColor: UI.color.primaryLight }}>
+            <MaterialIcons name="email" size={20} color={UI.color.primary} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-base font-medium text-gray-900">Email support</Text>
             <Text className="text-sm text-gray-500">support@growman.in</Text>
           </View>
-          <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
+          <MaterialIcons name="chevron-right" size={22} color="#C4C9D1" />
         </TouchableOpacity>
       </ScrollView>
     </View>

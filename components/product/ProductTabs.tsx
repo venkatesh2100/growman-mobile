@@ -9,162 +9,155 @@ interface ProductTabsProps {
   reviews: any[];
 }
 
+type TabKey = 'description' | 'specifications' | 'reviews';
+
 export default function ProductTabs({
   fullDescription,
   specifications,
   reviews,
 }: ProductTabsProps) {
-  const [activeTab, setActiveTab] = useState<'description' | 'specifications' | 'reviews'>('description');
+  const [activeTab, setActiveTab] = useState<TabKey>('description');
 
   const avgRating =
     reviews.length > 0
       ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
       : 0;
 
+  const specEntries: { label: string; value: string }[] = (() => {
+    if (!specifications) return [];
+    if (typeof specifications === 'string') {
+      return specifications
+        .split('|')
+        .map((item) => {
+          const [label, ...rest] = item.split(':');
+          return { label: label?.trim() ?? '', value: rest.join(':').trim() };
+        })
+        .filter((row) => row.label && row.value);
+    }
+    return Object.entries(specifications).map(([key, value]) => ({
+      label: key,
+      value: String(value),
+    }));
+  })();
+
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: 'description', label: 'Description' },
+    { key: 'specifications', label: 'Specifications' },
+    { key: 'reviews', label: `Reviews (${reviews.length})` },
+  ];
+
   return (
-    <View className="p-6 rounded-xl shadow-sm mt-8 bg-white">
-      {/* Tabs */}
-      <View className="border-b border-gray-200">
+    <View className="bg-white rounded-2xl p-4 border border-emerald-100/80 shadow-sm">
+      <View className="border-b border-gray-200 mb-4">
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View className="flex-row">
-            <TouchableOpacity
-              className={`py-3 px-4 border-b-2 ${
-                activeTab === 'description'
-                  ? 'border-green-600'
-                  : 'border-transparent'
-              }`}
-              onPress={() => setActiveTab('description')}>
-              <Text
-                className={`font-medium ${
-                  activeTab === 'description' ? 'text-gray-900' : 'text-gray-500'
-                }`}>
-                Description
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`py-3 px-4 border-b-2 ${
-                activeTab === 'specifications'
-                  ? 'border-green-600'
-                  : 'border-transparent'
-              }`}
-              onPress={() => setActiveTab('specifications')}>
-              <Text
-                className={`font-medium ${
-                  activeTab === 'specifications' ? 'text-gray-900' : 'text-gray-500'
-                }`}>
-                Specifications
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`py-3 px-4 border-b-2 ${
-                activeTab === 'reviews'
-                  ? 'border-green-600'
-                  : 'border-transparent'
-              }`}
-              onPress={() => setActiveTab('reviews')}>
-              <Text
-                className={`font-medium ${
-                  activeTab === 'reviews' ? 'text-gray-900' : 'text-gray-500'
-                }`}>
-                Reviews ({reviews.length})
-              </Text>
-            </TouchableOpacity>
+            {tabs.map((tab) => {
+              const active = activeTab === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  className={`py-2.5 px-3 mr-1 border-b-2 ${
+                    active ? 'border-emerald-600' : 'border-transparent'
+                  }`}
+                  onPress={() => setActiveTab(tab.key)}>
+                  <Text
+                    className={`text-sm ${active ? 'font-semibold text-gray-900' : 'font-medium text-gray-500'}`}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </ScrollView>
       </View>
 
-      {/* Tab Content */}
-      <View className="py-6">
-        {activeTab === 'description' && (
-          <View>
+      {activeTab === 'description' && (
+        <View>
+          {fullDescription.trim() ? (
             <MarkdownRenderer content={fullDescription} />
-          </View>
-        )}
+          ) : (
+            <Text className="text-sm text-gray-600">No description available.</Text>
+          )}
+        </View>
+      )}
 
-        {activeTab === 'specifications' && specifications && (
-          <View className="space-y-3">
-            {typeof specifications === 'string' ? (
-              <View className="gap-4">
-                {specifications.split('|').map((item, idx) => {
-                  const [label, value] = item.split(':').map((s) => s.trim());
-                  return (
-                    <View key={idx} className="flex-row border-b pb-2">
-                      <Text className="text-gray-600 font-medium flex-1">{label}:</Text>
-                      <Text className="text-gray-800 flex-1">{value}</Text>
-                    </View>
-                  );
-                })}
+      {activeTab === 'specifications' && (
+        <View>
+          {specEntries.length > 0 ? (
+            specEntries.map((row, idx) => (
+              <View
+                key={`${row.label}-${idx}`}
+                className={`flex-row py-2.5 ${
+                  idx < specEntries.length - 1 ? 'border-b border-gray-100' : ''
+                }`}>
+                <Text className="text-sm text-gray-600 flex-1">{row.label}</Text>
+                <Text className="text-sm text-gray-900 flex-1">{row.value}</Text>
               </View>
-            ) : (
-              <View className="gap-4">
-                {Object.entries(specifications).map(([key, value], idx) => (
-                  <View key={idx} className="flex-row border-b pb-2">
-                    <Text className="text-gray-600 font-medium flex-1">{key}:</Text>
-                    <Text className="text-gray-800 flex-1">{String(value)}</Text>
+            ))
+          ) : (
+            <Text className="text-sm text-gray-600">No specifications listed.</Text>
+          )}
+        </View>
+      )}
+
+      {activeTab === 'reviews' && (
+        <View>
+          {reviews.length > 0 ? (
+            <>
+              <View className="flex-row items-center gap-2 mb-4 pb-3 border-b border-gray-100">
+                <Text className="text-2xl font-bold text-gray-900">{avgRating.toFixed(1)}</Text>
+                <View>
+                  <View className="flex-row">
+                    {[...Array(5)].map((_, i) => (
+                      <MaterialIcons
+                        key={i}
+                        name={i < Math.floor(avgRating) ? 'star' : 'star-border'}
+                        size={16}
+                        color={i < Math.floor(avgRating) ? '#10B981' : '#D1D5DB'}
+                      />
+                    ))}
                   </View>
-                ))}
+                  <Text className="text-xs text-gray-600 mt-0.5">
+                    {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+                  </Text>
+                </View>
               </View>
-            )}
-          </View>
-        )}
 
-        {activeTab === 'reviews' && (
-          <View>
-            {reviews.length > 0 ? (
-              <View>
-                <View className="flex-row items-center mb-6">
-                  <Text className="text-4xl font-bold mr-4">{avgRating.toFixed(1)}</Text>
-                  <View>
-                    <View className="flex-row">
+              {reviews.map((review, idx) => (
+                <View
+                  key={idx}
+                  className={`py-4 ${idx < reviews.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                  <View className="flex-row items-center mb-1.5">
+                    <View className="flex-row mr-3">
                       {[...Array(5)].map((_, i) => (
                         <MaterialIcons
                           key={i}
-                          name={i < Math.floor(avgRating) ? 'star' : 'star-border'}
-                          size={20}
-                          color={i < Math.floor(avgRating) ? '#FBBF24' : '#D1D5DB'}
+                          name={i < review.rating ? 'star' : 'star-border'}
+                          size={14}
+                          color={i < review.rating ? '#10B981' : '#D1D5DB'}
                         />
                       ))}
                     </View>
-                    <Text className="text-gray-600">
-                      Based on {reviews.length} reviews
-                    </Text>
-                  </View>
-                </View>
-
-                <View className="space-y-6">
-                  {reviews.map((review, idx) => (
-                    <View key={idx} className="border-b pb-6 last:border-0">
-                      <View className="flex-row items-center mb-2">
-                        <View className="flex-row mr-4">
-                          {[...Array(5)].map((_, i) => (
-                            <MaterialIcons
-                              key={i}
-                              name={i < review.rating ? 'star' : 'star-border'}
-                              size={16}
-                              color={i < review.rating ? '#FBBF24' : '#D1D5DB'}
-                            />
-                          ))}
-                        </View>
-                        <Text className="font-bold">{review.title}</Text>
-                      </View>
-                      <Text className="text-gray-600 mb-2">{review.comment}</Text>
-                      <Text className="text-sm text-gray-500">
-                        by {review.user?.name || 'Anonymous'} •{' '}
-                        {new Date(review.date).toLocaleDateString()}
+                    {review.title ? (
+                      <Text className="text-sm font-semibold text-gray-900 flex-1" numberOfLines={1}>
+                        {review.title}
                       </Text>
-                    </View>
-                  ))}
+                    ) : null}
+                  </View>
+                  {review.comment ? (
+                    <Text className="text-sm text-gray-700 leading-relaxed mb-1.5">{review.comment}</Text>
+                  ) : null}
+                  <Text className="text-xs text-gray-500">
+                    {review.user?.name || 'Anonymous'} · {new Date(review.date).toLocaleDateString()}
+                  </Text>
                 </View>
-              </View>
-            ) : (
-              <Text className="text-gray-600">
-                No reviews yet. Be the first to review this product!
-              </Text>
-            )}
-          </View>
-        )}
-      </View>
+              ))}
+            </>
+          ) : (
+            <Text className="text-sm text-gray-600">No reviews yet.</Text>
+          )}
+        </View>
+      )}
     </View>
   );
 }
-

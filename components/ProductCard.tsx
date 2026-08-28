@@ -49,7 +49,7 @@ export default function ProductCard({ product, onPress, index = 0, variant = 'de
             {product.name}
           </Text>
           <View className="flex-row items-center flex-wrap gap-x-1.5 gap-y-0.5">
-            <Text className={`font-bold text-green-600 ${compact ? 'text-sm' : 'text-lg'}`}>₹{product.price}</Text>
+            <Text className={`font-bold text-emerald-600 ${compact ? 'text-sm' : 'text-lg'}`}>₹{product.price}</Text>
             {product.mrp && product.mrp > product.price && (
               <Text className={`text-gray-400 line-through ${compact ? 'text-[11px]' : 'text-sm'}`}>₹{product.mrp}</Text>
             )}
@@ -57,7 +57,7 @@ export default function ProductCard({ product, onPress, index = 0, variant = 'de
           {!compact && product.stock !== undefined && product.stock > 0 && (
             <View className="flex-row items-center gap-1 mt-1">
               <MaterialIcons name="check-circle" size={14} color="#10B981" />
-              <Text className="text-xs text-green-500 font-medium">In Stock</Text>
+              <Text className="text-xs text-emerald-500 font-medium">In Stock</Text>
             </View>
           )}
         </View>

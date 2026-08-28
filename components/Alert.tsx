@@ -226,7 +226,9 @@ export function AlertContainer() {
                   <MaterialIcons name={icon.name} size={28} color={icon.color} />
                 </View>
               )}
-              <Text className="text-center text-xl font-bold" style={{ color: UI.color.ink }}>
+              <Text
+                className="text-center text-xl"
+                style={{ fontFamily: UI.font.display, color: UI.color.ink }}>
                 {options.title}
               </Text>
               {options.message ? (
@@ -235,18 +237,11 @@ export function AlertContainer() {
                 </Text>
               ) : null}
               {welcome ? (
-                <View className="mt-4 flex-row flex-wrap justify-center gap-2 px-1">
-                  {['Shop plants', 'Track orders', 'Care tips'].map((chip) => (
-                    <View
-                      key={chip}
-                      className="rounded-full px-3 py-1.5"
-                      style={{ backgroundColor: UI.color.canvas }}>
-                      <Text className="text-xs font-semibold" style={{ color: UI.color.primaryDark }}>
-                        {chip}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
+                <Text
+                  className="mt-3 text-center text-[13px]"
+                  style={{ fontFamily: UI.font.displayItalic, color: UI.color.primaryDark }}>
+                  Happy growing.
+                </Text>
               ) : null}
             </View>
 
@@ -279,7 +274,9 @@ export function AlertContainer() {
                 style={{ backgroundColor: icon.bg }}>
                 <MaterialIcons name={icon.name} size={28} color={icon.color} />
               </View>
-              <Text className="text-center text-xl font-bold" style={{ color: UI.color.ink }}>
+              <Text
+                className="text-center text-xl"
+                style={{ fontFamily: UI.font.display, color: UI.color.ink }}>
                 {options.title}
               </Text>
               {options.message ? (

@@ -1,25 +1,17 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  FlatList,
-  Image,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ProductGridSkeleton } from '../components/skeletons/ProductGridSkeleton';
-import { UI } from '../lib/ui';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import ProductCard from '../components/ProductCard';
+import ScreenHeader from '../components/ScreenHeader';
+import { ProductGridSkeleton } from '../components/skeletons/ProductGridSkeleton';
 import { toast } from '../components/Toast';
 import { apiFetch } from '../lib/api';
 import { Product } from '../lib/types';
+import { UI } from '../lib/ui';
 import { useAuthStore } from '../store/authStore';
 
 export default function WishlistScreen() {
-  const insets = useSafeAreaInsets();
   const { token } = useAuthStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,17 +68,21 @@ export default function WishlistScreen() {
 
   if (!token) {
     return (
-      <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
+      <View className="flex-1" style={{ backgroundColor: UI.color.canvasAlt }}>
+        <ScreenHeader title="Wishlist" />
         <View className="flex-1 justify-center items-center px-8">
-          <View className="w-20 h-20 rounded-full bg-blue-100 items-center justify-center mb-4">
-            <MaterialIcons name="favorite" size={40} color="#3B82F6" />
+          <View
+            className="w-20 h-20 rounded-full items-center justify-center mb-4"
+            style={{ backgroundColor: UI.color.primaryLight }}>
+            <MaterialIcons name="favorite" size={40} color={UI.color.primary} />
           </View>
           <Text className="text-lg font-medium text-gray-600 text-center mb-2">Login to view wishlist</Text>
           <Text className="text-sm text-gray-500 text-center mb-6">
             Sign in to save your favorite plants and access them anytime.
           </Text>
           <TouchableOpacity
-            className="px-6 py-3 rounded-2xl bg-emerald-700"
+            className="px-6 py-3 rounded-2xl"
+            style={{ backgroundColor: UI.color.primaryDark }}
             onPress={() => router.replace('/(auth)')}>
             <Text className="text-base font-semibold text-white">Sign in</Text>
           </TouchableOpacity>
@@ -97,14 +93,8 @@ export default function WishlistScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1" style={{ backgroundColor: UI.color.canvas, paddingTop: insets.top }}>
-        <View className="flex-row items-center justify-between px-4 py-4 border-b border-emerald-100 bg-white">
-          <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-            <MaterialIcons name="arrow-back" size={UI.icon.lg} color={UI.color.ink} />
-          </TouchableOpacity>
-          <Text className="text-lg font-bold text-emerald-950">Wishlist</Text>
-          <View className="w-10" />
-        </View>
+      <View className="flex-1" style={{ backgroundColor: UI.color.canvas }}>
+        <ScreenHeader title="Wishlist" />
         <View className="flex-1 px-2 pt-3">
           <ProductGridSkeleton count={6} />
         </View>
@@ -113,20 +103,14 @@ export default function WishlistScreen() {
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: UI.color.canvas, paddingTop: insets.top }}>
-      <View className="flex-row items-center justify-between px-4 py-4 border-b border-emerald-100 bg-white">
-        <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-          <MaterialIcons name="arrow-back" size={UI.icon.lg} color={UI.color.ink} />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold text-emerald-950">Wishlist</Text>
-        <View className="w-10" />
-      </View>
+    <View className="flex-1" style={{ backgroundColor: UI.color.canvas }}>
+      <ScreenHeader title="Wishlist" subtitle={products.length > 0 ? `${products.length} saved` : undefined} />
 
       {products.length === 0 ? (
         <View className="flex-1 justify-center items-center px-8">
           <View
             className="w-20 h-20 rounded-full items-center justify-center mb-4"
-            style={{ backgroundColor: 'rgba(5, 150, 105, 0.12)' }}>
+            style={{ backgroundColor: UI.color.primaryLight }}>
             <MaterialIcons name="favorite-border" size={40} color={UI.color.primary} />
           </View>
           <Text className="text-lg font-medium text-gray-600 text-center mb-2">Your wishlist is empty</Text>
@@ -134,7 +118,8 @@ export default function WishlistScreen() {
             Save plants you love by tapping the heart icon on product pages.
           </Text>
           <TouchableOpacity
-            className="px-6 py-3 rounded-2xl bg-emerald-700"
+            className="px-6 py-3 rounded-2xl"
+            style={{ backgroundColor: UI.color.primaryDark }}
             onPress={() => router.push('/(tabs)/shop')}>
             <Text className="text-base font-semibold text-white">Browse plants</Text>
           </TouchableOpacity>

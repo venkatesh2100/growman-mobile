@@ -190,35 +190,31 @@ export default function OtpScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}>
       <ScrollView
-        className="flex-1 bg-gray-50"
+        className="flex-1"
+        style={{ backgroundColor: UI.color.canvasAlt }}
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         automaticallyAdjustKeyboardInsets>
-        <View className="p-6 pt-12">
+        <View className="p-6 pt-8">
           <TouchableOpacity
             onPress={() => router.back()}
-            className="flex-row items-center gap-1 mb-6 self-start"
+            className="w-10 h-10 rounded-xl items-center justify-center mb-6 self-start active:bg-emerald-50"
             hitSlop={12}>
-            <MaterialIcons name="arrow-back" size={22} color="#374151" />
-            <Text className="text-base text-gray-700">Edit number</Text>
+            <MaterialIcons name="arrow-back" size={22} color={UI.color.ink} />
           </TouchableOpacity>
 
-          <Animated.View entering={FadeInDown.delay(100).duration(400)} className="items-center mb-6">
-            <View className="w-16 h-16 rounded-full bg-green-600 items-center justify-center">
-              <MaterialIcons name="pin" size={32} color="#FFFFFF" />
-            </View>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-            <Text className="text-[26px] font-bold text-gray-900 mb-2 text-center">Enter the code</Text>
-            <Text className="text-sm text-gray-500 mb-2 text-center">Sent to +91 {masked}</Text>
+          <Animated.View entering={FadeInDown.delay(150).duration(400)}>
+            <Text className="text-[28px] mb-2" style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+              Enter the code
+            </Text>
+            <Text className="text-sm text-gray-500 mb-1">Sent to +91 {masked}</Text>
             {Platform.OS === 'android' && smsListening ? (
-              <Text className="text-xs text-emerald-700 mb-6 text-center">
+              <Text className="text-xs mb-6" style={{ color: UI.color.primaryDark }}>
                 Waiting for SMS — tap Allow when prompted to autofill.
               </Text>
             ) : (
-              <Text className="text-sm text-gray-400 mb-6 text-center">
+              <Text className="text-sm text-gray-400 mb-6">
                 {Platform.OS === 'ios'
                   ? 'Your keyboard may suggest the code from Messages.'
                   : 'Type the 6-digit code from your message.'}
@@ -247,9 +243,9 @@ export default function OtpScreen() {
           {success && (
             <Animated.View
               entering={FadeInDown.duration(200)}
-              className="flex-row items-center bg-green-50 border border-green-200 rounded-xl p-3 gap-2 mb-4">
-              <MaterialIcons name="check-circle" size={20} color="#16A34A" />
-              <Text className="flex-1 text-sm text-green-600">Verified! Taking you in…</Text>
+              className="flex-row items-center bg-emerald-50 border border-emerald-200 rounded-xl p-3 gap-2 mb-4">
+              <MaterialIcons name="check-circle" size={20} color="#059669" />
+              <Text className="flex-1 text-sm text-emerald-600">Verified! Taking you in…</Text>
             </Animated.View>
           )}
 
@@ -264,10 +260,12 @@ export default function OtpScreen() {
                       key={i}
                       className="flex-1 h-14 rounded-2xl bg-white border items-center justify-center shadow-sm"
                       style={{
-                        borderColor: focused ? UI.color.primary : '#E5E7EB',
+                        borderColor: focused ? UI.color.primary : UI.color.border,
                         borderWidth: focused ? 2 : 1,
                       }}>
-                      <Text className="text-xl font-bold text-gray-900">{char}</Text>
+                      <Text className="text-xl" style={{ color: UI.color.ink, fontFamily: UI.font.displayBold }}>
+                        {char}
+                      </Text>
                     </View>
                   );
                 })}
@@ -289,7 +287,8 @@ export default function OtpScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              className={`flex-row items-center justify-center bg-green-600 p-4 rounded-2xl gap-2 min-h-[52px] ${loading || success || otp.length < OTP_LENGTH ? 'opacity-60' : ''}`}
+              className={`flex-row items-center justify-center p-4 rounded-2xl gap-2 min-h-[52px] ${loading || success || otp.length < OTP_LENGTH ? 'opacity-60' : ''}`}
+              style={{ backgroundColor: UI.color.primaryDark }}
               onPress={() => handleVerify(otp)}
               disabled={loading || success || otp.length < OTP_LENGTH}
               activeOpacity={0.9}>
