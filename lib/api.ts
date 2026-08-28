@@ -175,3 +175,51 @@ export async function identifyPlant(imageUri: string): Promise<{
 
   return response.json();
 }
+
+/** Normalize to MSG91 format: digits only with country code, e.g. 919876543210 */
+export function toMsg91Phone(tenDigitOrE164: string): string {
+  const digits = tenDigitOrE164.replace(/\D/g, '');
+  if (digits.length === 10) return `91${digits}`;
+  if (digits.startsWith('91') && digits.length === 12) return digits;
+  return digits;
+}
+
+export const sendOtp = (phone: string, reqId?: string, channel?: number) =>
+  apiFetch('/auth/otp/send', {
+    method: 'POST',
+    body: JSON.stringify({
+      phone: toMsg91Phone(phone),
+      ...(reqId ? { reqId } : {}),
+      // MSG91 expects string channel codes ("11","12","4"); send both names for clarity
+      ...(channel != null
+        ? { channel: String(channel), retryChannel: String(channel) }
+        : {}),
+    }),
+  });
+
+export const verifyOtp = (phone: string, otp: string, reqId?: string) =>
+  apiFetch('/auth/otp/verify', {
+    method: 'POST',
+    body: JSON.stringify({ phone: toMsg91Phone(phone), otp, ...(reqId ? { reqId } : {}) }),
+  });
+
+/** After MSG91 DefaultWidget success — exchange access-token for Growman JWT */
+export const verifyWidgetOtp = (accessToken: string, identifier?: string) =>
+  apiFetch('/auth/otp/widget/verify', {
+    method: 'POST',
+    body: JSON.stringify({ accessToken, ...(identifier ? { identifier } : {}) }),
+  });
+
+export const completeProfile = (name: string, email?: string) =>
+  apiFetch('/auth/profile/complete', {
+    method: 'POST',
+    body: JSON.stringify({ name, ...(email ? { email } : {}) }),
+  });
+
+/** Exchange Truecaller Android OAuth code for Growman JWT (server-side token + userinfo). */
+export const verifyTruecaller = (authorizationCode: string, codeVerifier: string) =>
+  apiFetch('/auth/truecaller', {
+    method: 'POST',
+    body: JSON.stringify({ authorizationCode, codeVerifier }),
+  });
+
