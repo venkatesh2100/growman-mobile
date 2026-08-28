@@ -1,13 +1,12 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useRef } from 'react';
-import { showConfirm } from '../components/Alert';
-import { toast } from '../components/Toast';
+import { useCallback, useRef, useState } from 'react';
 import { hasDeliveryLocation, useUserStore } from '../store/userStore';
 import { useAuthStore } from '../store/authStore';
 
-/** Prompt once per screen mount when no delivery location is set. */
+/** Request location once per screen mount when no delivery location is set. */
 export function useLocationPrompt(enabled = true) {
   const promptedRef = useRef(false);
+  const [locating, setLocating] = useState(false);
   const token = useAuthStore((s) => s.token);
   const isLoaded = useUserStore((s) => s.isLoaded);
   const getEffectiveLocation = useUserStore((s) => s.getEffectiveLocation);
@@ -22,25 +21,14 @@ export function useLocationPrompt(enabled = true) {
       if (hasDeliveryLocation(location)) return;
 
       promptedRef.current = true;
-      showConfirm(
-        'Set delivery location',
-        'Share your location so we can show delivery options and availability near you.',
-        [
-          { text: 'Not now', style: 'cancel' },
-          {
-            text: 'Allow location',
-            onPress: () => {
-              void detectAndSaveLocation()
-                .then((addr) => {
-                  if (addr) toast('Location updated', 'success');
-                })
-                .catch(() => {
-                  toast('Could not detect location. Set it manually from Account.', 'error');
-                });
-            },
-          },
-        ]
-      );
+      setLocating(true);
+      void detectAndSaveLocation()
+        .catch(() => {
+          // Permission denied or lookup failed — row stays hidden until location exists.
+        })
+        .finally(() => setLocating(false));
     }, [enabled, token, isLoaded, getEffectiveLocation, detectAndSaveLocation])
   );
+
+  return { locating };
 }

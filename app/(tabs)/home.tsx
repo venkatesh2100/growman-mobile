@@ -134,7 +134,6 @@ export default function HomeScreen() {
   const token = useAuthStore((s) => s.token);
   const user = useUserStore((s) => s.user);
   const getLocationLabel = useUserStore((s) => s.getLocationLabel);
-  const detectAndSaveLocation = useUserStore((s) => s.detectAndSaveLocation);
 
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -144,27 +143,12 @@ export default function HomeScreen() {
   const [listening, setListening] = useState(false);
   const [bannerIndex, setBannerIndex] = useState(0);
   const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
-  const [locating, setLocating] = useState(false);
   const voiceResultRef = useRef<string | null>(null);
 
-  useLocationPrompt(true);
+  const { locating } = useLocationPrompt(true);
 
   const displayName = token && user?.name?.trim() ? getFirstName(user.name) : 'Growman';
   const locationLabel = getLocationLabel();
-
-  const handleLocationPress = () => {
-    if (token) {
-      router.push('/saved-addresses');
-      return;
-    }
-    setLocating(true);
-    void detectAndSaveLocation()
-      .then((addr) => {
-        if (addr) toast('Location updated', 'success');
-      })
-      .catch(() => toast('Could not detect location', 'error'))
-      .finally(() => setLocating(false));
-  };
 
   const bannerWidth = windowWidth;
   const bannerBottomRadius = 24;
@@ -505,7 +489,6 @@ export default function HomeScreen() {
                       label={locationLabel}
                       loading={locating}
                       ink="#064e3b"
-                      onPress={handleLocationPress}
                     />
                   </View>
                 </View>

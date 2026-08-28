@@ -161,7 +161,6 @@ export default function AccountScreen() {
                 <DeliveryLocationRow
                   label={locationLabel}
                   ink={UI.color.primaryDark}
-                  onPress={() => router.push('/saved-addresses')}
                 />
               </View>
             </View>
